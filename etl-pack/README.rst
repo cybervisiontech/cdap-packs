@@ -8,13 +8,13 @@ incremental moving of data between Hive tables with applied transformation using
 At the same time developers can implement their own source and sink types as well as custom transformation logic. 
 ETL-pack provides necessary abstractions and base building blocks for developer to focus on business logic and not 
 infrastructure and operation boilerplate. Developed components are transferrable and re-usable in many different 
-environment with Continuuity Reactor.
+environment with CDAP.
 
 Batch and Realtime ETL
 ----------------------
 
 Currently ETL-pack supports two types of ETL pipelines: batch and real-time. Batch processing happens with help of 
-MapReduce jobs. Real-time processing utilizes Continuuity BigFlow container. There are number of configuration options 
+MapReduce jobs. Real-time processing utilizes Tigon Flows container. There are number of configuration options 
 for ETL pipeline as displayed below.
 
 |(Batch)|
@@ -84,8 +84,8 @@ BatchETL which pre-defined configuration
 Note that similarly to BatchETL application the RealtimeETL app can be used as is, by providing the configuration 
 with runtime argumets in JSON format.
 
-Sources
--------
+Source
+------
 
 ETL-pack comes with number of sources available out of the box, like TableSource, StreamSource, MetadataSource which 
 can be used in real-time and batch ETL. It also comes with higher-level abstractions and base classes to ease 
@@ -121,10 +121,148 @@ to implement a custom source.
     }
   }
 
-Transformations
----------------
+Transformation
+--------------
 
-TBD
+ETL-pack comes with number of transformation options available out of the box, like IdentityTransformation, 
+ScriptableSchemaMapping, etc. It also comes with higher-level abstractions and base classes to ease implementing 
+custom source. Code below shows the interface to implement for transformation.
+
+.. code:: java
+
+  public interface Transformation extends ConfigurableProgram<RuntimeContext> {
+    @Nullable
+    Record transform(Record input) throws IOException, InterruptedException;
+  }
+
+Example below shows implementation of standard MetadataSource to give an example of how easy it is to 
+implement a custom source.
+
+.. code:: java
+
+  public class FilterByFields extends AbstractConfigurableProgram<RuntimeContext> implements Transformation {
+    public static final String ARG_INCLUDE_BY = "etl.transform.filterByFields.includeBy";
+  
+    private Map<String, String> includeBy;
+  
+    @Override
+    public void initialize(RuntimeContext context) {
+      String includeByArg = Programs.getRequiredArgOrProperty(context, ARG_INCLUDE_BY);
+      this.includeBy = new Gson().fromJson(includeByArg, Map.class);
+    }
+  
+    @Nullable
+    @Override
+    public Record transform(Record input) {
+      for (Map.Entry<String, String> mustHave : includeBy.entrySet()) {
+        if (!mustHave.getValue().equals(input.getValue(mustHave.getKey()))) {
+          return null;
+        }
+      }
+      return input;
+    }
+  }
+  
+Example above demonstrates integration of the ETL component with ETL program lifecycle. 
+The FilterByFields uses required fields with values passed by user on ETL program start.
+
+Sink
+----
+
+ETL-pack comes with number of sinks available out of the box, like HiveSink, KafkaSink, 
+HBaseSink, DictionarySink which can be used in real-time and batch ETL. It also comes with 
+higher-level abstractions and base classes to ease implementing custom sink. Code samples below 
+show the interfaces to implement for real-time and batch cases.
+
+.. code:: java
+
+  public interface RealtimeSink extends ConfigurableProgram<FlowletContext> {
+    void write(Record value) throws Exception;
+  }
+  
+.. code:: java
+
+  public interface MapReduceSink extends ConfigurableProgram<MapReduceContext> {
+    void prepareJob(MapReduceContext context) throws IOException;
+    void write(Mapper.Context context, Record value) throws IOException, InterruptedException;
+  }
+  
+Similarly to Source and Transformation, Sink can be integrated CDAP acpplication components lifecycle to 
+e.g. use run-time user arguments.
+
+Unit-testing
+------------
+
+CDAP provides extensive support for create productive development environment, 
+which includes unit-tests framework for testing both application components and application as a whole. 
+Code below shows example of unit-test of the application that was introdiced above.
+
+.. code:: java
+
+  public class MyApplicationTest extends TestBase {
+    private static HBaseTestBase testHBase;
+  
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+      testHBase = new HBaseTestFactory().get();
+      testHBase.startHBase();
+    }
+  
+    @AfterClass
+    public static void afterClass() throws Exception {
+      testHBase.stopHBase();
+    }
+  
+    @Test
+    private void testETL() throws Exception {
+      // deploy etl app
+      ApplicationManager applicationManager = deployApplication(MyApplication.class);
+      StreamWriter streamWriter = applicationManager.getStreamWriter("userDetails");
+      streamWriter.send("1,Jack,Brown");
+  
+      // run etl job
+      Map<String, String> args = ImmutableMap.of(HBaseSink.ARG_ZK,
+                                                 testHBase.getZkConnectionString());
+      MapReduceManager mr = applicationManager.startMapReduce("BatchETLMapReduce", args);
+      mr.waitForFinish(2, TimeUnit.MINUTES);
+  
+      // verify results
+      HTable hTable = testHBase.getHTable("users-table");
+      Result result = hTable.get(new Get(Bytes.toBytes(1)));
+      Assert.assertFalse(result.isEmpty());
+      Assert.assertEquals("Jack Brown",
+                          result.getValue(Bytes.toBytes("colfam"), Bytes.toBytes("name")));
+    }
+  }
+
+In this example unit-test uses HBaseTestBase utility provided by unit-testing framework to test output
+into external HBase table using HBaseSink. When only internal Reactor components (like DataSets) are 
+used by the application, unit-tests are simplified even further, as shown in code below.
+
+.. code:: java
+
+  public class MyApplicationTest extends ReactorTestBase {
+    @Test
+    private void testETL() throws Exception {
+      // deploy etl app
+      ApplicationManager applicationManager = deployApplication(MyApplication.class);
+      StreamWriter streamWriter = applicationManager.getStreamWriter("userDetails");
+      streamWriter.send("1,Jack,Brown");
+  
+      // run etl job
+      MapReduceManager mr = applicationManager.startMapReduce("BatchETLMapReduce");
+      mr.waitForFinish(2, TimeUnit.MINUTES);
+  
+      // verify results
+      DictionaryDataSet dictionary = appMngr.getDataSet(Constants.DICTIONARY_DATASET).get();
+      Assert.assertEquals("Jack Brown",
+                          Bytes.toString(dictionary.get("users", Bytes.toBytes(1), "name")));
+    }
+  }
+
+In this example we test same application but with sink changed to DictionarySink 
+which can be used for lookup during data transformation. Note that unit-test framework provides 
+in-memory runtime for datasets for fast execution.
 
 License
 =======
