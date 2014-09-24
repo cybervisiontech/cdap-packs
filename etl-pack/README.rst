@@ -121,6 +121,51 @@ to implement a custom source.
     }
   }
 
+Available source types: Stream and Stream Metadata. The latter one allows to work with Stream events metadata.
+
+Stream
+~~~~~~
+
+Stream source uses body of the stream even sent by Router. Its only configuration parameter 
+is the name of the source stream::
+
+  {
+    "etl.source.mr.stream.id": "someStream"
+  }
+
+Similarly for real-time stream source::
+
+  {
+    "etl.source.realtime.stream.id": "someStream"
+  }
+
+In addition to this stream source uses input schema. Schema is a list of fields defined by name and type::
+
+  [
+    {
+      "name": "userId",
+      "type": "INT"
+    },
+    {
+      "name": "lastName",
+      "type": "STRING"
+    },
+    {
+      "name": "firstName",
+      "type": "LONG"
+    }
+  ]
+
+Available field types are: STRING, INT, LONG, FLOAT, DOUBLE.
+
+Stream Metadata
+~~~~~~~~~~~~~~~
+
+Stream Metadata source uses stream event headers and stream event metadata like size of the event’s body. 
+Configuration of the Stream Metadata source is the same as of Stream source. The difference is that it 
+doesn’t use input schema: event’s header name and value are used as Record’s field name and value.
+
+
 Transformation
 --------------
 
@@ -176,7 +221,7 @@ SchemaMapping
 Using schema mapping as transformation type allows user to convert Record from the source of 
 the input schema into output record of the output schema for the destination. But not only simple 
 fields mapping and type conversion is available: user can use javascript expressions in output 
-values and lookup and join with dictionaries (static reference feeds) available in the system::
+values and lookup and join with dictionaries available::
 
   {
     "etl.transform.schema.mapping": {
@@ -190,14 +235,6 @@ In this example output user_id field is set with value of input userId field wit
 The user_name field is set with “<firstName> <lastName>” value. Where firstName and lastName are looked up in ‘users’
 dictionary using userId field value of the input record. The message_length field is set with the length of the value
 of the message field of the input record.
-
-Dictionary is available once it is populated with data from the feed. Even though usually such feed called 
-“static reference data feed” it can have lots of data as dictionary is a DataSet in Continuuity Reactor which 
-backed up by HBase table. At the same time dictionary lookup does not necessarily end up hitting disk as the
-dictionary is efficiently cached on two levels: HBase Memstore and Continuuity Reactor DataSet. The latter one 
-is flexible enough to allow developer implement its own caching logic. For more information on populating dictionary 
-refer to the Dictionary Sink section in the document.
-
 
 Sink
 ----
@@ -279,9 +316,7 @@ Dictionary
 ~~~~~~~~~~
 
 DictionarySink can be used to fill dictionaries with data available for lookup during transformation part 
-of subscription ETL. It can be used in both batch and real-time. Treating static reference feed the same way 
-as normal feed allows user to use it to fill dictionary to be used by other subscriptions and also write 
-its data into external destinations supported by any other type of sink.
+of subscription ETL. It can be used in both batch and real-time.
 
 DictionarySink takes dictionary name and field name to be used as key for lookup as the configuration::
  
