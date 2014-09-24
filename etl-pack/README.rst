@@ -166,6 +166,39 @@ implement a custom source.
 Example above demonstrates integration of the ETL component with ETL program lifecycle. 
 The FilterByFields uses required fields with values passed by user on ETL program start.
 
+There are two types of transformations available: Identitiy function and SchemaMapping.
+The former one doesn’t do any transformation effectively and hence neither requires any configuration nor 
+uses any of the input or output schemas. It is useful as a shortcut for delivering data as is.
+
+SchemaMapping
+~~~~~~~~~~~~~
+
+Using schema mapping as transformation type allows user to convert Record from the source of 
+the input schema into output record of the output schema for the destination. But not only simple 
+fields mapping and type conversion is available: user can use javascript expressions in output 
+values and lookup and join with dictionaries (static reference feeds) available in the system::
+
+  {
+    "etl.transform.schema.mapping": {
+      "user_id": "userId",
+      "user_name": "lookup('users', userId, 'firstName') + ' ' + lookup('users', userId, 'lastName')",
+      "message_length": "message.length"
+    }
+  }
+
+In this example output user_id field is set with value of input userId field with type conversion applied if needed.
+The user_name field is set with “<firstName> <lastName>” value. Where firstName and lastName are looked up in ‘users’
+dictionary using userId field value of the input record. The message_length field is set with the length of the value
+of the message field of the input record.
+
+Dictionary is available once it is populated with data from the feed. Even though usually such feed called 
+“static reference data feed” it can have lots of data as dictionary is a DataSet in Continuuity Reactor which 
+backed up by HBase table. At the same time dictionary lookup does not necessarily end up hitting disk as the
+dictionary is efficiently cached on two levels: HBase Memstore and Continuuity Reactor DataSet. The latter one 
+is flexible enough to allow developer implement its own caching logic. For more information on populating dictionary 
+refer to the Dictionary Sink section in the document.
+
+
 Sink
 ----
 
@@ -189,6 +222,73 @@ show the interfaces to implement for real-time and batch cases.
   
 Similarly to Source and Transformation, Sink can be integrated CDAP acpplication components lifecycle to 
 e.g. use run-time user arguments.
+
+
+Hive
+~~~~
+
+HiveSink is used to output data into Hive table when using batch ETL pipeline. 
+To configure the sink user provides information about destination Hive cluster as well as table details::
+
+  {
+    "etl.sink.mr.hive.metastoreURI": "thrift://hive.metastore.host:9083",
+    "etl.sink.mr.hive.hiveServerURI": "jdbc:hive://hive.server.host:9083",
+    "etl.sink.mr.hive.basedir": "/tmp",
+    "etl.sink.mr.hive.db": "default",
+    "etl.sink.mr.hive.table": "my_table",
+    "etl.sink.mr.hive.partitionValues": {"type":"suppliers"}
+  }
+
+If table does not exist, it will be created using provided configuration. 
+
+Optionally, user can define partition field values on per subscription basis (“type”=”suppliers” in this example).
+
+HBase
+~~~~~
+
+HBaseSink can be used to output data into HBase table in both batch and real-time ETL. 
+To configure the sink user provides HBase cluster information, HBase table information to write to and 
+Record’s field which value to be used as row key::
+
+  {
+    "etl.sink.realtime.hbase.zookeeper.quorum": "zk.hostname",
+    "etl.sink.realtime.hbase.zookeeper.client.port": "2181",
+    "etl.sink.realtime.hbase.zookeeper.parent.node": "/hbase"
+    "etl.sink.realtime.hbase.table.name": "my_table",
+    "etl.sink.realtime.hbase.table.colfam": "some_table_family",
+    "etl.sink.realtime.hbase.row.key.field": "some_row_key",
+  }
+
+If table does not exist it will be created using provided information.
+
+Kafka
+~~~~~
+
+KafkaSink can be used to output data into Kafka topic in both batch and real-time ETL. 
+To configure the sink user provides Kafka cluster information, Kafka topic to write to::
+
+  {
+    "etl.sink.mr.kafka.zookeeper.quorum": "zk.hostname:2181",
+    "etl.sink.mr.kafka.topic": "my_topic",
+    "etl.sink.mr.kafka.partition.field": "userType"
+  }
+
+Optionally user can specify Record’s field which value to be used for partitioning.
+
+Dictionary
+~~~~~~~~~~
+
+DictionarySink can be used to fill dictionaries with data available for lookup during transformation part 
+of subscription ETL. It can be used in both batch and real-time. Treating static reference feed the same way 
+as normal feed allows user to use it to fill dictionary to be used by other subscriptions and also write 
+its data into external destinations supported by any other type of sink.
+
+DictionarySink takes dictionary name and field name to be used as key for lookup as the configuration::
+ 
+  {
+    "etl.sink.realtime.dictionary.name": "users",
+    "etl.sink.realtime.dictionary.keyField": "userId"
+  }
 
 Unit-testing
 ------------
