@@ -371,12 +371,12 @@ Code below shows example of unit-test of the application that was introdiced abo
   }
 
 In this example unit-test uses HBaseTestBase utility provided by unit-testing framework to test output
-into external HBase table using HBaseSink. When only internal Reactor components (like DataSets) are 
+into external HBase table using HBaseSink. When only internal CDAP components (like DataSets) are 
 used by the application, unit-tests are simplified even further, as shown in code below.
 
 .. code:: java
 
-  public class MyApplicationTest extends ReactorTestBase {
+  public class MyApplicationTest extends TestBase {
     @Test
     private void testETL() throws Exception {
       // deploy etl app
