@@ -5,10 +5,8 @@ CDAP Packs is a collection of building blocks for your data application: re-usab
 programs and tools.
 
 ETL-pack
---------
-
-ETL-pack library is designed to ease the development of common ETL solutions and provide powerful 
-extension capabilities.
+  ETL-pack library is designed to ease the development of common ETL solutions and provide powerful 
+  extension capabilities.
 
 
 License
