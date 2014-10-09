@@ -20,7 +20,7 @@ the License.
 
   <groupId>co.cask.etl</groupId>
   <artifactId>etl-pack</artifactId>
-  <version>1.3.0</version>
+  <version>1.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -35,7 +35,7 @@ the License.
   <properties>
     <app.main.class>co.cask.att.staticfeed.StaticFeedApp</app.main.class>
 
-    <cdap.version>2.5.0-SNAPSHOT</cdap.version>
+    <cdap.version>2.5.0</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <hive.version>0.13.0</hive.version>
     <hbase.version>0.96.0-hadoop2</hbase.version>
@@ -46,7 +46,7 @@ the License.
     <jsr305.version>2.0.1</jsr305.version>
     <netty.http.version>0.4.0</netty.http.version>
     <tephra.version>0.2.0</tephra.version>
-    <twill.version>0.3.0-incubating-SNAPSHOT</twill.version>
+    <twill.version>0.4.0-incubating-SNAPSHOT</twill.version>
 
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -99,7 +99,7 @@ the License.
       </dependency>
       <dependency>
         <groupId>co.cask.cdap</groupId>
-        <artifactId>api</artifactId>
+        <artifactId>cdap-api</artifactId>
         <version>${cdap.version}</version>
         <exclusions>
           <exclusion>
@@ -137,7 +137,7 @@ the License.
       <!-- Test dependencies -->
       <dependency>
         <groupId>co.cask.cdap</groupId>
-        <artifactId>unit-test</artifactId>
+        <artifactId>cdap-unit-test</artifactId>
         <version>${cdap.version}</version>
         <scope>test</scope>
         <exclusions>

@@ -23,7 +23,7 @@ the License.
   <parent>
     <groupId>co.cask.etl</groupId>
     <artifactId>etl-pack</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>etl-pack-hive</artifactId>
@@ -43,7 +43,7 @@ the License.
 
     <dependency>
       <groupId>co.cask.cdap</groupId>
-      <artifactId>api</artifactId>
+      <artifactId>cdap-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
