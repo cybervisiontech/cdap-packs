@@ -51,7 +51,7 @@ pre-defined configuration:
     }
   
     private ImmutableMap<String, String> getMapping() {
-      return ImmutableMap.of(“user_id”, "userId",
+      return ImmutableMap.of("user_id", "userId",
                              "name", "first_name + ' ' + last_name");
     }
   }
@@ -283,7 +283,7 @@ To configure the sink, you provide information about the destination Hive cluste
 
 If the table does not exist, it will be created using the provided configuration. 
 
-Optionally, you can define partition field names on a per-subscription basis (*“type”=”suppliers”*, in this example).
+Optionally, you can define partition field names on a per-subscription basis (*"type"="suppliers"*, in this example).
 
 HBaseSink
 ~~~~~~~~~
