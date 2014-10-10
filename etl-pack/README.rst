@@ -15,8 +15,8 @@ Batch and Realtime ETL
 ----------------------
 
 Currently, the *ETL-pack* supports two types of ETL pipelines: batch and real-time. Batch processing happens with help of 
-MapReduce jobs. Real-time processing utilizes the Tigon Flows container. There are number of configuration options 
-for ETL pipeline as displayed below.
+MapReduce jobs. Real-time processing utilizes a Flow container. There are a number of configuration options 
+for an ETL pipeline as displayed below.
 
 |(Batch)|
 
@@ -108,7 +108,7 @@ real-time and batch cases:
     Iterator<Record> read(KEY_TYPE key, VALUE_TYPE value);
   }
 
-The example below shows the implementation of a standard ``MetadataSource``, showing how easy it is 
+The example below is the implementation of a ``MetadataSource``, showing how easy it is 
 to implement a custom source:
 
 .. code:: java
