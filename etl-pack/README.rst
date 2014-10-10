@@ -1,20 +1,21 @@
 ETL-pack Library
 ================
 
-The *ETL-pack* library is designed to ease the development of common ETL (extract, transform, and load) solutions and provide 
+The *ETL-pack* library is designed to ease the development of common ETL (extract, transform, and load) solutions and provides 
 powerful extension capabilities. Developers can use it as-is without any coding required to perform standard tasks such as
 incremental moving of data between Hive tables with applied transformation using input/ouput schema mapping and more.
 
-At the same time, developers can implement their own source and sink types as well as custom transformation logic. 
-*ETL-pack* provides necessary abstractions and base building blocks for developer to focus on business logic and not 
-infrastructure and operation boilerplate. Developed components are transferrable and re-usable in many different 
-environment with CDAP.
+At the same time, developers can implement their own source and sink types as well as
+custom transformation logic. The *ETL-pack* provides the necessary abstractions and base
+building-blocks so that developers can focus on business logic instead of infrastructure and
+operation boilerplate. Developed components are both transferrable and re-usable in many
+different environments with CDAP.
 
 Batch and Realtime ETL
 ----------------------
 
-Currently, *ETL-pack* supports two types of ETL pipelines: batch and real-time. Batch processing happens with help of 
-MapReduce jobs. Real-time processing utilizes Tigon Flows container. There are number of configuration options 
+Currently, the *ETL-pack* supports two types of ETL pipelines: batch and real-time. Batch processing happens with help of 
+MapReduce jobs. Real-time processing utilizes the Tigon Flows container. There are number of configuration options 
 for ETL pipeline as displayed below.
 
 |(Batch)|
@@ -82,7 +83,7 @@ The base class for real-time ETL is ``RealtimeETL``. The following code shows an
   }
   
 Note that similarly to the Batch ETL application, the Realtime ETL application can be used
-as-is by providing the configuration with runtime argumets in JSON format.
+as-is by providing the configuration with runtime arguments in JSON format.
 
 Source
 ------
@@ -107,7 +108,7 @@ real-time and batch cases:
     Iterator<Record> read(KEY_TYPE key, VALUE_TYPE value);
   }
 
-The example below shows the implementation of a standard ``MetadataSource``, giving an example of how easy it is 
+The example below shows the implementation of a standard ``MetadataSource``, showing how easy it is 
 to implement a custom source:
 
 .. code:: java
@@ -125,10 +126,10 @@ to implement a custom source:
 
 Available source types are Stream and Stream Metadata. The latter allows you to work with Stream events metadata.
 
-Stream
-~~~~~~
+Stream Source
+~~~~~~~~~~~~~
 
-Stream source uses the body of the stream event sent by the CDAP Router. Its sole configuration parameter 
+The Stream Source uses the body of the stream event sent by the CDAP Router. Its sole configuration parameter 
 is the name of the source stream::
 
   {
@@ -163,7 +164,7 @@ Available field types are STRING, INT, LONG, FLOAT, and DOUBLE.
 Stream Metadata
 ~~~~~~~~~~~~~~~
 
-Stream Metadata source uses Stream event headers and Stream event metadata such as the size of the event’s body. 
+The Stream Metadata source uses Stream event headers and Stream event metadata such as the size of the event’s body. 
 Configuration of the Stream Metadata source is the same as the Stream source. The difference is that it 
 doesn’t use an input schema: the event’s header name and value are used as the Record’s field name and value.
 
@@ -171,9 +172,9 @@ doesn’t use an input schema: the event’s header name and value are used as t
 Transformation
 --------------
 
-ETL-pack comes with number of transformation options available out-of-the-box, such as ``IdentityTransformation``, 
-``ScriptableSchemaMapping``, etc. It also comes with higher-level abstractions and base classes to ease implementing 
-custom source. Code below shows the interface to implement a transformation:
+The *ETL-pack* comes with a number of transformation options available out-of-the-box, including ``IdentityTransformation`` 
+and ``ScriptableSchemaMapping``. It comes with higher-level abstractions and base classes to ease implementing 
+a custom source. This code shows the interface to implement a transformation:
 
 .. code:: java
 
@@ -182,7 +183,7 @@ custom source. Code below shows the interface to implement a transformation:
     Record transform(Record input) throws IOException, InterruptedException;
   }
 
-The example below shows the implementation of a standard ``MetadataSource`` to show how easy it is to 
+The next example is the implementation of a ``MetadataSource``, and shows how easy it is to 
 implement a custom source:
 
 .. code:: java
@@ -221,9 +222,9 @@ SchemaMapping
 ~~~~~~~~~~~~~
 
 Using schema mapping as a transformation type allows you to convert a record from the source of 
-the input schema into the output record of the output schema for the destination. Not only simple 
-fields mapping and type conversion is available: you can use Javascript expressions in output 
-values, and then lookup and join with available dictionaries::
+the input schema into a record of the output schema for the destination. In addition to simple 
+fields mapping and type conversion, you can use Javascript expressions in output 
+values, and then lookup in available dictionaries::
 
   {
     "etl.transform.schema.mapping": {
@@ -233,8 +234,8 @@ values, and then lookup and join with available dictionaries::
     }
   }
 
-In this example, the output ``user_id`` field is set with the value of the input
-``userId`` field with type conversion applied, if needed. The ``user_name`` field is set
+In this example, the output field``user_id`` is set with the value of the input field
+``userId`` with type conversion applied, if needed. The ``user_name`` field is set
 with a value of *<firstName> <lastName>*, where ``firstName`` and ``lastName`` are looked
 up in a ‘users’ dictionary using the ``userId`` field value of the input record. The
 ``message_length`` field is set with the length of the value of the message field of the
@@ -243,8 +244,8 @@ input record.
 Sink
 ----
 
-ETL-pack comes with number of sinks available out-of-the-box, such as HiveSink, KafkaSink, 
-HBaseSink, and DictionarySink, all of which can be used in real-time and batch ETL. It also comes with 
+The *ETL-pack* comes with a number of sinks available out-of-the-box, such as ``HiveSink``, ``KafkaSink``, 
+``HBaseSink``, and ``DictionarySink``, all of which can be used in real-time and batch. It comes with 
 higher-level abstractions and base classes to ease implementing custom sinks. The code samples below 
 show the interfaces to implement for real-time and batch cases:
 
@@ -261,8 +262,8 @@ show the interfaces to implement for real-time and batch cases:
     void write(Mapper.Context context, Record value) throws IOException, InterruptedException;
   }
   
-Similarly to Source and Transformation, Sink can be integrated the CDAP application components lifecycle to 
-use run-time user arguments.
+Similarly to *Source* and *Transformation*, a Sink can be integrated into the CDAP application
+components lifecycle to use run-time user arguments.
 
 
 HiveSink
@@ -282,14 +283,14 @@ To configure the sink, you provide information about the destination Hive cluste
 
 If the table does not exist, it will be created using the provided configuration. 
 
-Optionally, you can define partition field values on a per-subscription basis (*“type”=”suppliers”*, in this example).
+Optionally, you can define partition field names on a per-subscription basis (*“type”=”suppliers”*, in this example).
 
 HBaseSink
 ~~~~~~~~~
 
 HBaseSink can be used to output data into HBase table in both batch and real-time ETL. 
 To configure the sink, you provide the HBase cluster, the HBase table to write to, and the
-Record’s field whose value is to be used as a row key::
+Record’s field whose value is to be used as the row key::
 
   {
     "etl.sink.realtime.hbase.zookeeper.quorum": "zk.hostname",
@@ -300,7 +301,7 @@ Record’s field whose value is to be used as a row key::
     "etl.sink.realtime.hbase.row.key.field": "some_row_key",
   }
 
-If table does not exist it will be created using the provided information.
+If the table does not exist it will be created using the provided information.
 
 KafkaSink
 ~~~~~~~~~
@@ -314,13 +315,13 @@ To configure the sink, you provide the Kafka cluster information and the Kafka t
     "etl.sink.mr.kafka.partition.field": "userType"
   }
 
-Optionally, you can specify a Record’s field, whose value will be used for partitioning.
+Optionally, you can specify a Record’s field name, whose value will be used for partitioning.
 
 DictionarySink
 ~~~~~~~~~~~~~~
 
 DictionarySink can be used to fill dictionaries with data and make it available for lookup
-during the transformation part of subscription ETL. It can be used in both batch and
+during the transformation part of the subscription ETL. It can be used in both batch and
 real-time.
 
 DictionarySink takes a dictionary name and a field name to be used as the key for lookup as the configuration::
@@ -335,7 +336,7 @@ Unit-testing
 
 CDAP provides extensive support for creating a productive development environment; it 
 includes a unit-test framework for testing both application components and the application as a whole. 
-The example dode below shows a unit-test of the application that was introduced above:
+The example below shows a unit-test of the application that was introduced above:
 
 .. code:: java
 
@@ -376,7 +377,7 @@ The example dode below shows a unit-test of the application that was introduced 
   }
 
 In this example, the unit-test uses the ``HBaseTestBase`` utility provided by the unit-testing framework to test output
-into an external HBase table using ``HBaseSink``. When only internal CDAP components (such as Datasets) are 
+into an HBase table using ``HBaseSink``. When only internal CDAP components (such as Datasets) are 
 used by the application, unit-tests can be simplified further, as shown here:
 
 .. code:: java
