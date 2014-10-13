@@ -15,7 +15,7 @@ Batch and Realtime ETL
 ----------------------
 
 Currently, the *ETL-pack* supports two types of ETL pipelines: batch and real-time. Batch processing happens with help of 
-MapReduce jobs. Real-time processing utilizes a Flow container. There are a number of configuration options 
+MapReduce jobs. Real-time processing utilizes a Flow. There are a number of configuration options 
 for an ETL pipeline as displayed below.
 
 |(Batch)|
