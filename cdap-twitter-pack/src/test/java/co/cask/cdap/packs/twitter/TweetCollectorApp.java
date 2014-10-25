@@ -29,7 +29,7 @@ import co.cask.cdap.internal.io.UnsupportedTypeException;
 import java.util.UUID;
 
 /**
- * App for testing {@link TweetCollectorFlowlet}
+ * App for testing {@link TweetCollectorFlowlet}.
  */
 public class TweetCollectorApp extends AbstractApplication {
   @Override

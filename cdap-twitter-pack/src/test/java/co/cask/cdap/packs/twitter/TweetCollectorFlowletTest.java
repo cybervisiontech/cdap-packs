@@ -27,23 +27,17 @@ import co.cask.cdap.test.TestBase;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.gson.Gson;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
+ * Test for TweetCollectorFlowlet.
  */
 public class TweetCollectorFlowletTest extends TestBase {
-  private static final Gson GSON = new Gson();
 
   @Test
   public void test() throws Exception {
@@ -51,7 +45,7 @@ public class TweetCollectorFlowletTest extends TestBase {
       new Tweet("tweet1", 1000),
       new Tweet("tweet2", 2000)
     );
-    File srcFile = writeToTempFile(tweets.iterator());
+    File srcFile = TweetCollectorTestUtil.writeToTempFile(tweets.iterator());
 
     ApplicationManager applicationManager = deployApplication(TweetCollectorApp.class);
     applicationManager.startFlow("TweetCollectorFlow",
@@ -71,26 +65,5 @@ public class TweetCollectorFlowletTest extends TestBase {
       result.add(scan.next().getValue());
     }
     Assert.assertEquals(tweets, result);
-  }
-
-  private File writeToTempFile(Iterator<Tweet> iterator) throws IOException {
-    File srcFile = File.createTempFile("tweets", "txt");
-    srcFile.deleteOnExit();
-
-    FileWriter fw = new FileWriter(srcFile);
-    try {
-      BufferedWriter bw = new BufferedWriter(fw);
-      try {
-        while (iterator.hasNext()) {
-          bw.write(GSON.toJson(iterator.next()));
-          bw.newLine();
-        }
-      } finally {
-        bw.close();
-      }
-    } finally {
-      fw.close();
-    }
-    return srcFile;
   }
 }

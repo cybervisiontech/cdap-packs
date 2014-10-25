@@ -8,6 +8,10 @@ programs and tools.
   The ETL-pack library is designed to ease the development of common ETL solutions and provide powerful 
   extension capabilities.
 
+`Twitter-pack </cdap-twitter-pack/>`_: Twitter Integration
+  The Twitter-pack library is designed to ease the CDAP apps development tasks that require integration with Twitter, 
+  such as pulling tweets stream.
+
 
 License
 =======
