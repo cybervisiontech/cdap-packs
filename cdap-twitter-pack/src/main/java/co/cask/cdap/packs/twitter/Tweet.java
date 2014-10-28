@@ -18,9 +18,14 @@ package co.cask.cdap.packs.twitter;
 
 import com.google.common.base.Objects;
 
+/**
+ * Carries tweet status info.
+ *
+ * TODO: at this moment we have to use our own pojo instead of {@link twitter4j.Status} which is not a real POJO.
+ */
 public final class Tweet {
-  private String text;
-  private long createdAt;
+  private final String text;
+  private final long createdAt;
 
   public Tweet(String text, long createdAt) {
     this.text = text;
