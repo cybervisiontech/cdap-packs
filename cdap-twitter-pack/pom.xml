@@ -199,6 +199,34 @@
     </profile>
   </profiles>
 
+  <organization>
+    <name>Cask Data, Inc.</name>
+    <url>http://cask.co</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Cask Data</name>
+      <email>cask-user@googlegroups.com</email>
+      <organization>Cask Data, Inc.</organization>
+      <organizationUrl>http://www.cdap.io</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/caskdata/cdap-packs.git</connection>
+    <developerConnection>scm:git:git@github.com:caskdata/cdap-packs.git</developerConnection>
+    <url>https://github.com/caskdata/cdap-packs.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <distributionManagement>
     <repository>
       <id>sonatype.release</id>
