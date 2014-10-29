@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -249,27 +250,28 @@ public class TweetCollectorFlowlet extends AbstractFlowlet {
     private final Configuration twitter4jConf;
 
     private TwitterStream twitterStream;
-    private volatile boolean stopped = false;
+    private final CountDownLatch latch;
 
     private TweetPuller(Configuration twitter4jConf) {
       this.twitter4jConf = twitter4jConf;
+      this.latch = new CountDownLatch(1);
     }
 
     @Override
     protected void triggerShutdown() {
-      stopped = true;
-      super.triggerShutdown();
+      latch.countDown();
     }
 
     @Override
     protected void shutDown() throws Exception {
       twitterStream.cleanUp();
       twitterStream.shutdown();
-      super.shutDown();
     }
 
     @Override
     public void run() {
+      LOG.info("Starting pulling from Twitter stream...");
+
       twitterStream = new TwitterStreamFactory(twitter4jConf).getInstance();
 
       StatusListener listener = new StatusAdapter() {
@@ -277,8 +279,9 @@ public class TweetCollectorFlowlet extends AbstractFlowlet {
         public void onStatus(Status status) {
           String text = status.getText();
           try {
-            while (!stopped) {
-              queue.offer(new Tweet(text, status.getCreatedAt().getTime()), 1, TimeUnit.SECONDS);
+            boolean added = false;
+            while (!added && latch.getCount() > 0) {
+              added = queue.offer(new Tweet(text, status.getCreatedAt().getTime()), 1, TimeUnit.SECONDS);
             }
           } catch (InterruptedException e) {
             LOG.warn("Interrupted while writing to a queue", e);
@@ -299,6 +302,12 @@ public class TweetCollectorFlowlet extends AbstractFlowlet {
 
       twitterStream.addListener(listener);
       twitterStream.sample();
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        // exiting
+        Thread.currentThread().interrupt();
+      }
       LOG.info("CollectingThread run() is exiting");
     }
 
