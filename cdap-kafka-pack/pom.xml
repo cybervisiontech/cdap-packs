@@ -23,17 +23,21 @@
   <groupId>co.cask.cdap</groupId>
   <artifactId>cdap-kafka-pack</artifactId>
   <version>0.1.0</version>
+  <packaging>pom</packaging>
+
   <modules>
     <module>cdap-kafka-flow</module>
-    <module>cdap-kafka-compat-0.7</module>
     <module>cdap-kafka-compat-0.8</module>
+    <module>cdap-kafka-compat-0.7</module>
   </modules>
-  <packaging>pom</packaging>
 
   <properties>
     <cdap.version>[2.5.0,2.5.9999]</cdap.version>
     <junit.version>4.11</junit.version>
+    <kafka.version>0.8.1.1</kafka.version>
+    <logback.version>1.1.2</logback.version>
     <twill.version>[0.3.0,]</twill.version>
+    <zkclient.version>0.3</zkclient.version>
     <zookeeper.version>3.4.6</zookeeper.version>
   </properties>
 
@@ -44,17 +48,17 @@
         <artifactId>cdap-api</artifactId>
         <version>${cdap.version}</version>
       </dependency>
-      <!--<dependency>-->
-        <!--<groupId>org.apache.kafka</groupId>-->
-        <!--<artifactId>kafka_2.10</artifactId>-->
-        <!--<version>0.8.1.1</version>-->
-        <!--<exclusions>-->
-          <!--<exclusion>-->
-            <!--<groupId>log4j</groupId>-->
-            <!--<artifactId>log4j</artifactId>-->
-          <!--</exclusion>-->
-        <!--</exclusions>-->
-      <!--</dependency>-->
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka_2.10</artifactId>
+        <version>${kafka.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
       <dependency>
         <groupId>org.apache.zookeeper</groupId>
         <artifactId>zookeeper</artifactId>
@@ -79,6 +83,60 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.apache.twill</groupId>
+        <artifactId>twill-core</artifactId>
+        <version>${twill.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-all</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.10</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.twill</groupId>
+            <artifactId>twill-discovery-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.101tec</groupId>
+        <artifactId>zkclient</artifactId>
+        <version>${zkclient.version}</version>
+      </dependency>
+
+
+      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
@@ -88,6 +146,18 @@
         <groupId>co.cask.cdap</groupId>
         <artifactId>cdap-unit-test</artifactId>
         <version>${cdap.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-core</artifactId>
+        <version>${logback.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
