@@ -20,14 +20,16 @@ import org.apache.twill.kafka.client.TopicPartition;
 
 /**
  * Helper class to carry information about Kafka consumer of a particular topic partition.
+ *
+ * @param <OFFSET> Type of the offset object
  */
-public final class KafkaConsumerInfo {
+public final class KafkaConsumerInfo<OFFSET> {
   private final TopicPartition topicPartition;
   private final int fetchSize;
-  private long readOffset;
-  private long pendingReadOffset;
+  private OFFSET readOffset;
+  private OFFSET pendingReadOffset;
 
-  KafkaConsumerInfo(TopicPartition topicPartition, int fetchSize, long readOffset) {
+  KafkaConsumerInfo(TopicPartition topicPartition, int fetchSize, OFFSET readOffset) {
     this.topicPartition = topicPartition;
     this.fetchSize = fetchSize;
     this.readOffset = readOffset;
@@ -41,22 +43,22 @@ public final class KafkaConsumerInfo {
     return fetchSize;
   }
 
-  public long getReadOffset() {
-    return pendingReadOffset > readOffset ? pendingReadOffset : readOffset;
+  public OFFSET getReadOffset() {
+    return pendingReadOffset != null ? pendingReadOffset : readOffset;
   }
 
-  public void setReadOffset(long readOffset) {
+  public void setReadOffset(OFFSET readOffset) {
     this.pendingReadOffset = readOffset;
   }
 
   void commitReadOffset() {
-    if (pendingReadOffset > readOffset) {
+    if (pendingReadOffset != null) {
       readOffset = pendingReadOffset;
-      pendingReadOffset = Long.MIN_VALUE;
+      pendingReadOffset = null;
     }
   }
 
   void rollbackReadOffset() {
-    pendingReadOffset = Long.MIN_VALUE;
+    pendingReadOffset = null;
   }
 }

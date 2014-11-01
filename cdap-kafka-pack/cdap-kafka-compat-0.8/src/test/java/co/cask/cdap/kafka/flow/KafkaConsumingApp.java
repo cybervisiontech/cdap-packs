@@ -17,12 +17,13 @@
 package co.cask.cdap.kafka.flow;
 
 import co.cask.cdap.api.annotation.ProcessInput;
+import co.cask.cdap.api.annotation.UseDataSet;
 import co.cask.cdap.api.app.AbstractApplication;
+import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.flow.Flow;
 import co.cask.cdap.api.flow.FlowSpecification;
 import co.cask.cdap.api.flow.flowlet.AbstractFlowlet;
 import co.cask.cdap.api.flow.flowlet.OutputEmitter;
-import org.apache.twill.kafka.client.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ public class KafkaConsumingApp extends AbstractApplication {
   @Override
   public void configure() {
     addFlow(new KafkaConsumingFlow());
+    createDataset("kafkaOffsets", KeyValueTable.class);
   }
 
   public static final class KafkaConsumingFlow implements Flow {
@@ -54,9 +56,15 @@ public class KafkaConsumingApp extends AbstractApplication {
     }
   }
 
+  /**
+   * A flowlet to poll from Kafka.
+   */
   public static final class KafkaSource extends AbstractKafka08ConsumerFlowlet<byte[], String> {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSource.class);
+
+    @UseDataSet("kafkaOffsets")
+    private KeyValueTable offsetStore;
 
     private OutputEmitter<String> emitter;
 
@@ -79,13 +87,8 @@ public class KafkaConsumingApp extends AbstractApplication {
     }
 
     @Override
-    protected long getBeginOffset(TopicPartition topicPartition) {
-      return -2L;
-    }
-
-    @Override
-    protected void saveReadOffsets(Map<TopicPartition, Long> offsets) {
-//      LOG.info("Save offsets: {}", offsets);
+    protected KeyValueTable getOffsetStore() {
+      return offsetStore;
     }
   }
 

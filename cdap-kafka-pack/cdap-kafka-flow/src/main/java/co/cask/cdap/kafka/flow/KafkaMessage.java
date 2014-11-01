@@ -22,19 +22,18 @@ import java.nio.ByteBuffer;
 
 /**
  * Represents a Kafka message.
+ *
+ * @param <OFFSET> Type of message offset
  */
-public class KafkaMessage {
+public class KafkaMessage<OFFSET> {
 
   private final TopicPartition topicPartition;
-  private final long offset;
-  private final long nextOffset;
+  private final OFFSET nextOffset;
   private final ByteBuffer key;
   private final ByteBuffer payload;
 
-  public KafkaMessage(TopicPartition topicPartition, long offset,
-                      long nextOffset, ByteBuffer key, ByteBuffer payload) {
+  public KafkaMessage(TopicPartition topicPartition, OFFSET nextOffset, ByteBuffer key, ByteBuffer payload) {
     this.topicPartition = topicPartition;
-    this.offset = offset;
     this.nextOffset = nextOffset;
     this.key = key;
     this.payload = payload;
@@ -44,11 +43,7 @@ public class KafkaMessage {
     return topicPartition;
   }
 
-  public long getOffset() {
-    return offset;
-  }
-
-  public long getNextOffset() {
+  public OFFSET getNextOffset() {
     return nextOffset;
   }
 

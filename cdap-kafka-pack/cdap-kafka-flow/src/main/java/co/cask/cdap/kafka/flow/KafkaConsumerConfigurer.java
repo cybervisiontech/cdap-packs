@@ -34,10 +34,6 @@ public interface KafkaConsumerConfigurer {
 
   /**
    * Sets the Kafka broker list. The format of the broker list is based on the Kafka version.
-   *
-   * In Kafka 0.8, broker list is a comma separated list of "host:port".
-   * <br>
-   * In Kafka 0.7, broker list is a comma separate list of "brokerId:host:port"
    */
   void setBrokers(String brokers);
 

@@ -18,12 +18,14 @@ package co.cask.cdap.kafka.flow;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -39,7 +41,9 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -47,7 +51,43 @@ import java.util.Set;
 import java.util.SortedMap;
 
 /**
+ * Provides information about Kafka brokers by watching for changes in ZooKeeper. It is specific for Kafka 0.7
+ * ZooKeeper layout (https://cwiki.apache.org/confluence/display/KAFKA/Writing+a+Driver+for+Kafka)
+ * <p/>
+ * In brief, Kafka 0.7 has the following ZK node structure:
  *
+ * <pre>
+ * /brokers
+ *   /ids
+ *     /[broker1_id]
+ *     /[broker2_id]
+ *   /topics
+ *     /[topic_1]
+ *       /[broker1_id]
+ *     /[topic_2]
+ *       /[broker1_id]
+ * </pre>
+ *
+ * <table border="1">
+ *   <tr>
+ *     <th>Role</th>
+ *     <th>ZooKeeper Path</th>
+ *     <th>Type</th>
+ *     <th>Data Description</th>
+ *   </tr>
+ *   <tr>
+ *     <td>ID Registry</td>
+ *     <td><pre>/brokers/ids/[0..N]</pre></td>
+ *     <td>Ephemeral</td>
+ *     <td>String in the format of "creator:host:port" of the broker.</td>
+ *   </tr>
+ *   <tr>
+ *     <td>Topic Registry</td>
+ *     <td><pre>/brokers/topics/[topic]/[0..N]</pre></td>
+ *     <td>Ephemeral</td>
+ *     <td>Number of partitions that topic has on that Broker.</td>
+ *   </tr>
+ * </table>
  */
 final class KafkaBrokerCache extends AbstractIdleService {
   private static final Logger LOG = LoggerFactory.getLogger(KafkaBrokerCache.class);
@@ -55,10 +95,10 @@ final class KafkaBrokerCache extends AbstractIdleService {
   private static final String BROKERS_PATH = "/brokers";
 
   private final ZKClient zkClient;
-  private final Map<String, InetSocketAddress> brokers;
+  private final Map<String, KafkaBroker> brokers;
 
   // topicBrokers is from topic->partition size->brokerId
-  private final Map<String, SortedMap<Integer, Set<String>>> topicBrokers;
+  private final Map<String, SortedMap<Integer, Collection<String>>> topicBrokers;
   private final Runnable invokeGetBrokers = new Runnable() {
     @Override
     public void run() {
@@ -90,53 +130,57 @@ final class KafkaBrokerCache extends AbstractIdleService {
   }
 
   public int getPartitionSize(String topic) {
-    SortedMap<Integer, Set<String>> partitionBrokers = topicBrokers.get(topic);
+    SortedMap<Integer, Collection<String>> partitionBrokers = topicBrokers.get(topic);
     if (partitionBrokers == null || partitionBrokers.isEmpty()) {
       return 1;
     }
     return partitionBrokers.lastKey();
   }
 
-  public InetSocketAddress getBrokerAddress(String topic, int partition) {
-    SortedMap<Integer, Set<String>> partitionBrokers = topicBrokers.get(topic);
-    if (partitionBrokers == null || partitionBrokers.isEmpty()) {
-      return pickRandomBroker();
+  /**
+   * Returns a list of {@link KafkaBroker} that contains the given topic and partition. The list
+   * is already sorted by the broker id in ascending order.
+   */
+  public List<KafkaBroker> getBrokers(String topic, int partition) {
+    SortedMap<Integer, Collection<String>> partitionBrokers = topicBrokers.get(topic);
+
+    // If there is no broker for the topic partition, return empty list
+    if (partitionBrokers == null || partitionBrokers.isEmpty() || partition >= partitionBrokers.lastKey()) {
+      return ImmutableList.of();
     }
 
-    // If the requested partition is greater than supported partition size, randomly pick one
-    if (partition >= partitionBrokers.lastKey()) {
-      return pickRandomBroker();
+    List<KafkaBroker> result = Lists.newArrayList();
+    for (String brokerId : Iterables.concat(partitionBrokers.tailMap(partition + 1).values())) {
+      result.add(brokers.get(brokerId));
     }
-
-    // Randomly pick a partition size and randomly pick a broker from it
-    Random random = new Random();
-    partitionBrokers = partitionBrokers.tailMap(partition + 1);
-    List<Integer> sizes = Lists.newArrayList(partitionBrokers.keySet());
-    Integer partitionSize = pickRandomItem(sizes, random);
-    List<String> ids = Lists.newArrayList(partitionBrokers.get(partitionSize));
-    InetSocketAddress address = brokers.get(ids.get(new Random().nextInt(ids.size())));
-    return address == null ? pickRandomBroker() : address;
+    Collections.sort(result);
+    return result;
   }
 
-  private InetSocketAddress pickRandomBroker() {
-    Map.Entry<String, InetSocketAddress> entry = Iterables.getFirst(brokers.entrySet(), null);
-    if (entry == null) {
+  /**
+   * Returns a random broker address or {@code null} if none are available.
+   */
+  public KafkaBroker getRandomBroker() {
+    Collection<KafkaBroker> brokers = this.brokers.values();
+    if (brokers.isEmpty()) {
       return null;
     }
-    return entry.getValue();
+
+    return Iterables.get(brokers, new Random().nextInt(brokers.size()), null);
   }
 
-  private <T> T pickRandomItem(List<T> list, Random random) {
-    return list.get(random.nextInt(list.size()));
-  }
-
+  /**
+   * Gets brokerIds (async) and starts watching for changes.
+   */
   private void getBrokers() {
     final String idsPath = BROKERS_PATH + "/ids";
 
     Futures.addCallback(zkClient.getChildren(idsPath, new Watcher() {
       @Override
       public void process(WatchedEvent event) {
-        getBrokers();
+        if (isRunning()) {
+          getBrokers();
+        }
       }
     }), new ExistsOnFailureFutureCallback<NodeChildren>(idsPath, invokeGetBrokers) {
       @Override
@@ -151,38 +195,51 @@ final class KafkaBrokerCache extends AbstractIdleService {
     });
   }
 
+  /**
+   * Gets all topic nodes (async). Also leave a node watch for changes of topics.
+   */
   private void getTopics() {
     final String topicsPath = BROKERS_PATH + "/topics";
     Futures.addCallback(zkClient.getChildren(topicsPath, new Watcher() {
       @Override
       public void process(WatchedEvent event) {
-        getTopics();
+        if (isRunning()) {
+          getTopics();
+        }
       }
     }), new ExistsOnFailureFutureCallback<NodeChildren>(topicsPath, invokeGetTopics) {
       @Override
       public void onSuccess(NodeChildren result) {
         Set<String> children = ImmutableSet.copyOf(result.getChildren());
 
-        // Process new children
-        for (String topic : ImmutableSet.copyOf(Sets.difference(children, topicBrokers.keySet()))) {
-          getTopic(topicsPath + "/" + topic, topic);
+        // Process new topic. For existing topic, changes in broker list under it is being watched already.
+        for (String topic : Sets.difference(children, topicBrokers.keySet())) {
+          getTopicBrokers(topicsPath + "/" + topic, topic);
         }
 
-        // Remove old children
+        // Remove old topics
         removeDiff(children, topicBrokers);
       }
     });
   }
 
+  /**
+   * Gets the broker node data. The broker data has the form {@code creator:host:port}.
+   *
+   * @param path ZK path to the broker node
+   * @param brokerId The broker Id
+   */
   private void getBrokenData(String path, final String brokerId) {
     Futures.addCallback(zkClient.getData(path), new FutureCallback<NodeData>() {
       @Override
       public void onSuccess(NodeData result) {
+        // result.getData() shouldn't be null, as it's data written by Kafka when the node was created.
         String data = new String(result.getData(), Charsets.UTF_8);
-        String hostPort = data.substring(data.indexOf(':') + 1);
-        int idx = hostPort.indexOf(':');
-        brokers.put(brokerId, new InetSocketAddress(hostPort.substring(0, idx),
-                                                    Integer.parseInt(hostPort.substring(idx + 1))));
+        // We are only interested in host and port
+        Iterator<String> splits = Iterables.skip(Splitter.on(':').split(data), 1).iterator();
+        String host = splits.next();
+        int port = Integer.parseInt(splits.next());
+        brokers.put(brokerId, new KafkaBroker(brokerId, host, port));
       }
 
       @Override
@@ -192,13 +249,22 @@ final class KafkaBrokerCache extends AbstractIdleService {
     });
   }
 
-  private void getTopic(final String path, final String topic) {
+  /**
+   * Gets all broker associated with the given topic. It also starts watching for changes in broker list.
+   *
+   * @param path ZK path to the topic node
+   * @param topic the topic
+   */
+  private void getTopicBrokers(final String path, final String topic) {
     Futures.addCallback(zkClient.getChildren(path, new Watcher() {
       @Override
       public void process(WatchedEvent event) {
+        if (!isRunning()) {
+          return;
+        }
         // Other event type changes are either could be ignored or handled by parent watcher
         if (event.getType() == Event.EventType.NodeChildrenChanged) {
-          getTopic(path, topic);
+          getTopicBrokers(path, topic);
         }
       }
     }), new FutureCallback<NodeChildren>() {
@@ -207,35 +273,37 @@ final class KafkaBrokerCache extends AbstractIdleService {
         List<String> children = result.getChildren();
         final List<ListenableFuture<BrokerPartition>> futures = Lists.newArrayListWithCapacity(children.size());
 
-        // Fetch data from each broken node
+        // Fetch data (number of partitions) from each broken node and transform it to BrokerPartition
         for (final String brokerId : children) {
-          Futures.transform(zkClient.getData(path + "/" + brokerId), new Function<NodeData, BrokerPartition>() {
+          futures.add(Futures.transform(zkClient.getData(path + "/" + brokerId),
+                                        new Function<NodeData, BrokerPartition>() {
             @Override
             public BrokerPartition apply(NodeData input) {
               return new BrokerPartition(brokerId, Integer.parseInt(new String(input.getData(), Charsets.UTF_8)));
             }
-          });
+          }));
         }
 
         // When all fetching is done, build the partition size->broker map for this topic
-        Futures.successfulAsList(futures).addListener(new Runnable() {
+        Futures.addCallback(Futures.successfulAsList(futures), new FutureCallback<List<BrokerPartition>>() {
           @Override
-          public void run() {
-            Map<Integer, Set<String>> partitionBrokers = Maps.newHashMap();
-            for (ListenableFuture<BrokerPartition> future : futures) {
-              try {
-                BrokerPartition info = future.get();
-                Set<String> brokerSet = partitionBrokers.get(info.getPartitionSize());
-                if (brokerSet == null) {
-                  brokerSet = Sets.newHashSet();
-                  partitionBrokers.put(info.getPartitionSize(), brokerSet);
-                }
-                brokerSet.add(info.getBrokerId());
-              } catch (Exception e) {
-                // Exception is ignored, as it will be handled by parent watcher
+          public void onSuccess(List<BrokerPartition> result) {
+            TreeMultimap<Integer, String> partitionBrokers = TreeMultimap.create();
+
+            for (BrokerPartition brokerPartition : result) {
+              if (brokerPartition == null) {
+                // Ignore if getData() on the broker node failed (hence got null result).
+                continue;
               }
+
+              partitionBrokers.put(brokerPartition.getPartitionSize(), brokerPartition.getBrokerId());
             }
-            topicBrokers.put(topic, ImmutableSortedMap.copyOf(partitionBrokers));
+            topicBrokers.put(topic, partitionBrokers.asMap());
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            // This never happens, which is the contract of successfulAsList.
           }
         }, Threads.SAME_THREAD_EXECUTOR);
       }
@@ -247,12 +315,23 @@ final class KafkaBrokerCache extends AbstractIdleService {
     });
   }
 
+  /**
+   * Removes all Map entries that are not presented in the provided keys Set.
+   */
   private <K, V> void removeDiff(Set<K> keys, Map<K, V> map) {
-    for (K key : ImmutableSet.copyOf(Sets.difference(map.keySet(), keys))) {
+    for (K key : Sets.difference(map.keySet(), keys)) {
       map.remove(key);
     }
   }
 
+  /**
+   * A {@link FutureCallback} for ZK operations so that if the operation failed due
+   * to {@link KeeperException.Code#NONODE} error, it will watch for existence of the given node and performs
+   * a given action when the node become available. On node removal, the node will be watched for creation again
+   * and will trigger given action again once it is created.
+   *
+   * @param <V> result type of the Future it is listening on.
+   */
   private abstract class ExistsOnFailureFutureCallback<V> implements FutureCallback<V> {
 
     private final String path;
@@ -266,10 +345,11 @@ final class KafkaBrokerCache extends AbstractIdleService {
     @Override
     public final void onFailure(Throwable t) {
       if (!isNotExists(t)) {
-        LOG.error("Fail to watch for kafka brokers: " + path, t);
+        LOG.error("Operation failed for path {}", path, t);
         return;
       }
 
+      // If failed due to not exist error, watch for creation of the node.
       waitExists(path);
     }
 
@@ -277,21 +357,27 @@ final class KafkaBrokerCache extends AbstractIdleService {
       return ((t instanceof KeeperException) && ((KeeperException) t).code() == KeeperException.Code.NONODE);
     }
 
-    private void waitExists(String path) {
-      LOG.info("Path " + path + " not exists. Watch for creation.");
+    private void waitExists(final String path) {
+      LOG.debug("Path {} not exists. Watch for creation.", path);
 
       // If the node doesn't exists, use the "exists" call to watch for node creation.
       Futures.addCallback(zkClient.exists(path, new Watcher() {
         @Override
         public void process(WatchedEvent event) {
-          if (event.getType() == Event.EventType.NodeCreated || event.getType() == Event.EventType.NodeDeleted) {
+          if (!isRunning()) {
+            return;
+          }
+          if (event.getType() == Event.EventType.NodeCreated) {
             action.run();
+          } else if (event.getType() == Event.EventType.NodeDeleted) {
+            // If the node is deleted, keep watching it.
+            waitExists(path);
           }
         }
       }), new FutureCallback<Stat>() {
         @Override
         public void onSuccess(Stat result) {
-          // If path exists, get children again, otherwise wait for watch to get triggered
+          // If path exists on the exists call, execution the action.
           if (result != null) {
             action.run();
           }
@@ -299,12 +385,15 @@ final class KafkaBrokerCache extends AbstractIdleService {
 
         @Override
         public void onFailure(Throwable t) {
-          action.run();
+          LOG.error("Failed to get existence of path {}", path, t);
         }
       });
     }
   }
 
+  /**
+   * A helper POJO to hold brokerId and the number of partitions (of a given topic) for that broker.
+   */
   private static final class BrokerPartition {
     private final String brokerId;
     private final int partitionSize;

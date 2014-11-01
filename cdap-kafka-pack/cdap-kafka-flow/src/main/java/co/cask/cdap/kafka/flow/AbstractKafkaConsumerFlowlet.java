@@ -17,6 +17,7 @@
 package co.cask.cdap.kafka.flow;
 
 import co.cask.cdap.api.annotation.Tick;
+import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.flow.flowlet.AbstractFlowlet;
 import co.cask.cdap.api.flow.flowlet.FailurePolicy;
 import co.cask.cdap.api.flow.flowlet.FailureReason;
@@ -40,24 +41,27 @@ import java.util.concurrent.TimeUnit;
 
 /**
  *
- * @param <K>
- * @param <V>
+ * @param <KEY> Type of message key
+ * @param <PAYLOAD> Type of message value
+ * @param <OFFSET> Type of offset object
  */
-public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet {
+public abstract class AbstractKafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends AbstractFlowlet {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
-  private static final Function<KafkaConsumerInfo, Long> CONSUMER_TO_OFFSET = new Function<KafkaConsumerInfo, Long>() {
+
+  private final Function<KafkaConsumerInfo<OFFSET>, OFFSET> consumerToOffset =
+    new Function<KafkaConsumerInfo<OFFSET>, OFFSET>() {
     @Override
-    public Long apply(KafkaConsumerInfo input) {
+    public OFFSET apply(KafkaConsumerInfo<OFFSET> input) {
       return input.getReadOffset();
     }
   };
 
-  private Function<ByteBuffer, K> keyDecoder;
-  private Function<ByteBuffer, V> valueDecoder;
-  private boolean processValueOnly;
+  private Function<ByteBuffer, KEY> keyDecoder;
+  private Function<ByteBuffer, PAYLOAD> payloadDecoder;
+  private boolean processPayloadOnly;
   private KafkaConfig kafkaConfig;
-  private Map<TopicPartition, KafkaConsumerInfo> consumerInfos;
+  private Map<TopicPartition, KafkaConsumerInfo<OFFSET>> consumerInfos;
 
   /**
    * Initialize this {@link Flowlet}. Child class must call this method explicitly when overriding it.
@@ -79,18 +83,16 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
 
     Type superType = TypeToken.of(getClass()).getSupertype(AbstractKafkaConsumerFlowlet.class).getType();
 
-    // Tries to detect Key and Value type for creating decoder for them
+    // Tries to detect Key and Payload type for creating decoder for them
     if (superType instanceof ParameterizedType) {
-      // Extract Key and Value types
+      // Extract Key and Payload types
       Type[] typeArgs = ((ParameterizedType) superType).getActualTypeArguments();
 
       // Parameter type arguments of AbstractKafkaConsumerFlowlet must be 2
       keyDecoder = createDecoder(typeArgs[0]);
-      valueDecoder = createDecoder(typeArgs[1]);
+      payloadDecoder = createDecoder(typeArgs[1]);
     }
-    processValueOnly = isProcessValueOnly();
-
-    // TODO: Initialize readOffset
+    processPayloadOnly = isProcessPayloadOnly();
   }
 
   /**
@@ -109,16 +111,16 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
    */
   @Tick(delay = 100, unit = TimeUnit.MILLISECONDS)
   public void pollMessages() throws Exception {
-    for (KafkaConsumerInfo info : consumerInfos.values()) {
-      Iterator<KafkaMessage> iterator = readMessages(info);
+    for (KafkaConsumerInfo<OFFSET> info : consumerInfos.values()) {
+      Iterator<KafkaMessage<OFFSET>> iterator = readMessages(info);
       while (iterator.hasNext()) {
-        KafkaMessage message = iterator.next();
+        KafkaMessage<OFFSET> message = iterator.next();
 
         // Process the message
-        if (processValueOnly) {
-          processMessage(decodeValue(message.getPayload()));
+        if (processPayloadOnly) {
+          processMessage(decodePayload(message.getPayload()));
         } else {
-          processMessage(decodeKey(message.getKey()), decodeValue(message.getPayload()));
+          processMessage(decodeKey(message.getKey()), decodePayload(message.getPayload()));
         }
 
         // Update the read offset
@@ -126,7 +128,7 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
       }
     }
 
-    saveReadOffsets(Maps.transformValues(consumerInfos, CONSUMER_TO_OFFSET));
+    saveReadOffsets(Maps.transformValues(consumerInfos, consumerToOffset));
   }
 
   @Override
@@ -138,7 +140,7 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
       return;
     }
 
-    for (KafkaConsumerInfo info : consumerInfos.values()) {
+    for (KafkaConsumerInfo<OFFSET> info : consumerInfos.values()) {
       info.commitReadOffset();
     }
   }
@@ -146,7 +148,7 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
   @Override
   public FailurePolicy onFailure(Object input, InputContext inputContext, FailureReason reason) {
     if (input == null) {
-      for (KafkaConsumerInfo info : consumerInfos.values()) {
+      for (KafkaConsumerInfo<OFFSET> info : consumerInfos.values()) {
         info.rollbackReadOffset();
       }
     }
@@ -154,7 +156,16 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
   }
 
   /**
-   * Override to configure Kafka consumer.
+   * Override to return a {@link KeyValueTable} for storing consumer offsets.
+   */
+  protected KeyValueTable getOffsetStore() {
+    return null;
+  }
+
+
+  /**
+   * Override to configure Kafka consumer. This method will be called during {@link #initialize(FlowletContext)} phase,
+   * hence it has access to {@link FlowletContext} through the {@link #getContext()} method.
    */
   protected abstract void configureKafka(KafkaConsumerConfigurer configurer);
 
@@ -165,21 +176,17 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
    * @return An {@link Iterator} containing sequence of messages read from Kafka. The first message must
    *         has offset no earlier than the {@link KafkaConsumerInfo#getReadOffset()} as given in the parameter.
    */
-  protected abstract Iterator<KafkaMessage> readMessages(KafkaConsumerInfo consumerInfo);
+  protected abstract Iterator<KafkaMessage<OFFSET>> readMessages(KafkaConsumerInfo<OFFSET> consumerInfo);
 
   /**
    * Returns the read offsets to start with for the given {@link TopicPartition}.
-   *
-   * @param topicPartition The topic and partition that needs the start offset
-   * @return The starting offset. Returning special value {@code -1L} for latest offset or {@code -2L} for earliest
-   *         offset.
    */
-  protected abstract long getBeginOffset(TopicPartition topicPartition);
+  protected abstract OFFSET getBeginOffset(TopicPartition topicPartition);
 
   /**
    * Persists read offsets for all topic-partition that this Flowlet consumes from Kafka.
    */
-  protected abstract void saveReadOffsets(Map<TopicPartition, Long> offsets);
+  protected abstract void saveReadOffsets(Map<TopicPartition, OFFSET> offsets);
 
   /**
    * Returns a Kafka configuration.
@@ -189,23 +196,23 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
   }
 
   /**
-   * Override this method if interested both key and value of a message read from Kafka. If both
+   * Override this method if interested both key and payload of a message read from Kafka. If both
    * this and the {@link AbstractKafkaConsumerFlowlet#processMessage(Object)} are overridden, only this
    * method will be called.
    *
    * @param key Key decoded from the message
-   * @param value Value decoded from the message
+   * @param payload Payload decoded from the message
    */
-  protected void processMessage(K key, V value) throws Exception {
+  protected void processMessage(KEY key, PAYLOAD payload) throws Exception {
     // No-op by default.
   }
 
   /**
-   * Override this method if only interested in the value of a message read from Kafka.
+   * Override this method if only interested in the payload of a message read from Kafka.
    *
-   * @param value Value decoded from the message
+   * @param payload Payload decoded from the message
    */
-  protected void processMessage(V value) throws Exception {
+  protected void processMessage(PAYLOAD payload) throws Exception {
     // No-op by default.
   }
 
@@ -215,7 +222,7 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
    * @param buffer The bytes representing the key in the Kafka message
    * @return The decoded key
    */
-  protected K decodeKey(ByteBuffer buffer) {
+  protected KEY decodeKey(ByteBuffer buffer) {
     if (keyDecoder != null) {
       return keyDecoder.apply(buffer);
     }
@@ -223,16 +230,16 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
   }
 
   /**
-   * Override this method to provide custom decoding of message value.
+   * Override this method to provide custom decoding of message payload.
    *
-   * @param buffer The bytes representing the value in the Kafka message
-   * @return The decoded value
+   * @param buffer The bytes representing the payload in the Kafka message
+   * @return The decoded payload
    */
-  protected V decodeValue(ByteBuffer buffer) {
-    if (valueDecoder != null) {
-      return valueDecoder.apply(buffer);
+  protected PAYLOAD decodePayload(ByteBuffer buffer) {
+    if (payloadDecoder != null) {
+      return payloadDecoder.apply(buffer);
     }
-    throw new IllegalStateException("No decoder for decoding message value");
+    throw new IllegalStateException("No decoder for decoding message payload");
   }
 
   /**
@@ -294,19 +301,19 @@ public abstract class AbstractKafkaConsumerFlowlet<K, V> extends AbstractFlowlet
     };
   }
 
-  private Map<TopicPartition, KafkaConsumerInfo> createConsumerInfos(Map<TopicPartition, Integer> config) {
-    ImmutableMap.Builder<TopicPartition, KafkaConsumerInfo> consumers = ImmutableMap.builder();
+  private Map<TopicPartition, KafkaConsumerInfo<OFFSET>> createConsumerInfos(Map<TopicPartition, Integer> config) {
+    ImmutableMap.Builder<TopicPartition, KafkaConsumerInfo<OFFSET>> consumers = ImmutableMap.builder();
 
     for (Map.Entry<TopicPartition, Integer> entry : config.entrySet()) {
       consumers.put(entry.getKey(),
-                    new KafkaConsumerInfo(entry.getKey(), entry.getValue(), getBeginOffset(entry.getKey())));
+                    new KafkaConsumerInfo<OFFSET>(entry.getKey(), entry.getValue(), getBeginOffset(entry.getKey())));
     }
     return consumers.build();
   }
 
-  private boolean isProcessValueOnly() {
+  private boolean isProcessPayloadOnly() {
     try {
-      // Try to get the processMessage(K key, V value) method from the current implementation class.
+      // Try to get the processMessage(KEY, PAYLOAD) method from the current implementation class.
       getClass().getDeclaredMethod("processMessage", Object.class, Object.class);
       return false;
     } catch (NoSuchMethodException e) {

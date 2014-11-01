@@ -18,8 +18,11 @@ package co.cask.cdap.kafka.flow;
 
 import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.FlowManager;
+import co.cask.cdap.test.RuntimeMetrics;
+import co.cask.cdap.test.RuntimeStats;
 import co.cask.cdap.test.TestBase;
 import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import org.apache.twill.internal.kafka.EmbeddedKafkaServer;
 import org.apache.twill.internal.kafka.client.ZKKafkaClientService;
@@ -37,6 +40,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -84,14 +88,51 @@ public class Kafka08ConsumerFlowletTest extends TestBase {
     String topic = "testTopic";
     ApplicationManager appManager = deployApplication(KafkaConsumingApp.class);
     FlowManager flowManager = appManager.startFlow("KafkaConsumingFlow",
-                                                   ImmutableMap.of(//"kafka.zookeeper", zkServer.getConnectionStr(),
-                                                                   "kafka.brokers", "localhost:" + kafkaPort,
+                                                   ImmutableMap.of("kafka.brokers", "localhost:" + kafkaPort,
                                                                    "kafka.topic", topic));
 
+    // Publish a message to Kafka, the flow should consume it
     KafkaPublisher publisher = kafkaClient.getPublisher(KafkaPublisher.Ack.ALL_RECEIVED, Compression.NONE);
     publisher.prepare(topic).add(Charsets.UTF_8.encode("Message 1"), 0).send();
 
-    TimeUnit.SECONDS.sleep(1000);
+    RuntimeMetrics sinkMetrics = RuntimeStats.getFlowletMetrics("KafkaConsumingApp", "KafkaConsumingFlow", "DataSink");
+    sinkMetrics.waitForProcessed(1L, 10, TimeUnit.SECONDS);
+    flowManager.stop();
+
+    // Publish a message when the flow is not running
+    publisher.prepare(topic).add(Charsets.UTF_8.encode("Message 2"), 0).send();
+
+    // Start the flow again (using ZK to discover broker this time)
+    RuntimeStats.clearStats("KafkaConsumingApp");
+
+
+    flowManager = startFlowWithRetry(appManager, "KafkaConsumingFlow",
+                                     ImmutableMap.of("kafka.zookeeper", zkServer.getConnectionStr(),
+                                                     "kafka.topic", topic), 5);
+
+    TimeUnit.SECONDS.sleep(5);
+    flowManager.stop();
+  }
+
+  private FlowManager startFlowWithRetry(ApplicationManager appManager,
+                                         String flowId, Map<String, String> args, int trials) {
+
+    Throwable failure = null;
+    do {
+      try {
+        if (failure != null) {
+          TimeUnit.SECONDS.sleep(1);
+        }
+        return appManager.startFlow(flowId, args);
+      } catch (InterruptedException e) {
+        throw Throwables.propagate(e);
+      } catch (Throwable t) {
+        // Just memorize the failure
+        failure = t;
+      }
+    } while (--trials > 0);
+
+    throw Throwables.propagate(failure);
   }
 
   private static Properties generateKafkaConfig(String zkConnectStr, int port, File logDir) {

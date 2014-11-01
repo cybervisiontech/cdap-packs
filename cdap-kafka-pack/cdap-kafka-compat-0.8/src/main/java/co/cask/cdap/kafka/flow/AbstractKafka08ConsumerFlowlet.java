@@ -16,6 +16,8 @@
 
 package co.cask.cdap.kafka.flow;
 
+import co.cask.cdap.api.common.Bytes;
+import co.cask.cdap.api.dataset.lib.KeyValueTable;
 import co.cask.cdap.api.flow.flowlet.FlowletContext;
 import com.google.common.base.Splitter;
 import com.google.common.collect.AbstractIterator;
@@ -59,10 +61,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  *
- * @param <K>
- * @param <V>
+ * @param <KEY>
+ * @param <PAYLOAD>
  */
-public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafkaConsumerFlowlet<K, V> {
+public abstract class AbstractKafka08ConsumerFlowlet<KEY, PAYLOAD>
+                extends AbstractKafkaConsumerFlowlet<KEY, PAYLOAD, Long> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractKafka08ConsumerFlowlet.class);
   private static final int SO_TIMEOUT = 5 * 1000;           // 5 seconds.
@@ -112,11 +115,12 @@ public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafka
   }
 
   @Override
-  protected Iterator<KafkaMessage> readMessages(KafkaConsumerInfo consumerInfo) {
+  protected Iterator<KafkaMessage<Long>> readMessages(KafkaConsumerInfo<Long> consumerInfo) {
     final TopicPartition topicPartition = consumerInfo.getTopicPartition();
     String topic = topicPartition.getTopic();
     int partition = topicPartition.getPartition();
 
+    // Fetch message from Kafka.
     final SimpleConsumer consumer = getConsumer(consumerInfo);
     if (consumer == null) {
       return Iterators.emptyIterator();
@@ -157,9 +161,9 @@ public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafka
     // Returns an Iterator of message
     final long fetchReadOffset = readOffset;
     final Iterator<MessageAndOffset> messages = response.messageSet(topic, partition).iterator();
-    return new AbstractIterator<KafkaMessage>() {
+    return new AbstractIterator<KafkaMessage<Long>>() {
       @Override
-      protected KafkaMessage computeNext() {
+      protected KafkaMessage<Long> computeNext() {
         while (messages.hasNext()) {
           MessageAndOffset messageAndOffset = messages.next();
           if (messageAndOffset.offset() < fetchReadOffset) {
@@ -167,12 +171,56 @@ public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafka
             continue;
           }
           Message message = messageAndOffset.message();
-          return new KafkaMessage(topicPartition, messageAndOffset.offset(),
-                                  messageAndOffset.nextOffset(), message.key(), message.payload());
+          return new KafkaMessage<Long>(topicPartition,
+                                        messageAndOffset.nextOffset(), message.key(), message.payload());
         }
         return endOfData();
       }
     };
+  }
+
+  /**
+   * Returns the beginning offset for the given topic partition. It uses the {@link KeyValueTable} returned
+   * by {@link #getOffsetStore()} to lookup information. If no table is provided, this method returns
+   * {@link kafka.api.OffsetRequest#EarliestTime()}.
+   *
+   * @param topicPartition The topic and partition that needs the start offset
+   * @return The starting offset or {@link kafka.api.OffsetRequest#EarliestTime()} if offset is unknown.
+   */
+  @Override
+  protected Long getBeginOffset(TopicPartition topicPartition) {
+    KeyValueTable offsetStore = getOffsetStore();
+    if (offsetStore == null) {
+      return kafka.api.OffsetRequest.EarliestTime();
+    }
+
+    // The value is simply a 8-bytes long representing the offset
+    byte[] value = offsetStore.read(topicPartition.getTopic() + topicPartition.getPartition());
+    if (value == null || value.length != Bytes.SIZEOF_LONG) {
+      return kafka.api.OffsetRequest.EarliestTime();
+    }
+    return Bytes.toLong(value);
+  }
+
+  /**
+   * Persists offset for each {@link TopicPartition} to a {@link KeyValueTable} provided by
+   * {@link #getOffsetStore()}. The key is simply concatenation of
+   * topic and partition and the value is a 8-bytes encoded long of the offset. If no dataset is provided,
+   * this method is a no-op.
+   *
+   * @param offsets Map from topic partition to offset to save.
+   */
+  @Override
+  protected void saveReadOffsets(Map<TopicPartition, Long> offsets) {
+    KeyValueTable offsetStore = getOffsetStore();
+    if (offsetStore == null) {
+      return;
+    }
+
+    for (Map.Entry<TopicPartition, Long> entry : offsets.entrySet()) {
+      String key = entry.getKey().getTopic() + entry.getKey().getPartition();
+      offsetStore.write(key, Bytes.toBytes(entry.getValue()));
+    }
   }
 
   private void stopService(Service service) {
@@ -201,7 +249,7 @@ public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafka
    * Returns a {@link SimpleConsumer} for the given consumer info or {@code null} if no leader broker is currently
    * available.
    */
-  private SimpleConsumer getConsumer(KafkaConsumerInfo consumerInfo) {
+  private SimpleConsumer getConsumer(KafkaConsumerInfo<Long> consumerInfo) {
     TopicPartition topicPartition = consumerInfo.getTopicPartition();
     SimpleConsumer consumer = kafkaConsumers.get(topicPartition);
     if (consumer != null) {
@@ -220,7 +268,7 @@ public abstract class AbstractKafka08ConsumerFlowlet<K, V> extends AbstractKafka
     return consumer;
   }
 
-  private void removeConsumer(KafkaConsumerInfo consumerInfo) {
+  private void removeConsumer(KafkaConsumerInfo<Long> consumerInfo) {
     SimpleConsumer consumer = kafkaConsumers.remove(consumerInfo.getTopicPartition());
     if (consumer != null) {
       consumer.close();

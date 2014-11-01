@@ -16,7 +16,6 @@
 
 package co.cask.cdap.kafka.flow;
 
-import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.producer.Producer;
 import kafka.javaapi.producer.ProducerData;
 import kafka.producer.ProducerConfig;
@@ -32,7 +31,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -73,8 +71,7 @@ public class Kafka07ConsumerFlowletTest {
   @Test
   public void test() throws Exception {
     Properties prop = new Properties();
-//    prop.setProperty("zk.connect", zkServer.getConnectionStr());
-    prop.setProperty("broker.list", "1:localhost:" + kafkaPort);
+    prop.setProperty("zk.connect", zkServer.getConnectionStr());
     prop.setProperty("serializer.class", "kafka.serializer.StringEncoder");
 
     ProducerConfig prodConfig = new ProducerConfig(prop);
@@ -87,7 +84,7 @@ public class Kafka07ConsumerFlowletTest {
     KafkaBrokerCache cache = new KafkaBrokerCache(zkClient);
     cache.startAndWait();
     TimeUnit.SECONDS.sleep(3);
-    System.out.println(cache.getBrokerAddress("test", 0));
+    System.out.println(cache.getBrokers("test", 3));
     System.out.println(cache.getPartitionSize("test"));
     cache.stopAndWait();
 
@@ -122,6 +119,7 @@ public class Kafka07ConsumerFlowletTest {
     prop.setProperty("log.segment.bytes", "536870912");
     prop.setProperty("zk.connect", zkConnectStr);
     prop.setProperty("zk.connectiontimeout.ms", "1000000");
+    prop.setProperty("num.partitions", "3");
     return prop;
   }
 }
