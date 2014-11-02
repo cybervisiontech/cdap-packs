@@ -223,14 +223,6 @@ public abstract class AbstractKafka08ConsumerFlowlet<KEY, PAYLOAD>
     }
   }
 
-  private void stopService(Service service) {
-    try {
-      service.stopAndWait();
-    } catch (Throwable t) {
-      LOG.error("Failed when stopping service {}", service, t);
-    }
-  }
-
   private long getReadOffset(SimpleConsumer consumer, String topic, int partition, long time) {
     OffsetRequest offsetRequest = new OffsetRequest(
       ImmutableMap.of(new TopicAndPartition(topic, partition), new PartitionOffsetRequestInfo(time, 1)),

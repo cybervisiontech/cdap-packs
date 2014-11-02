@@ -24,11 +24,15 @@ import co.cask.cdap.api.flow.flowlet.FailureReason;
 import co.cask.cdap.api.flow.flowlet.Flowlet;
 import co.cask.cdap.api.flow.flowlet.FlowletContext;
 import co.cask.cdap.api.flow.flowlet.InputContext;
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.Service;
 import org.apache.twill.kafka.client.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -47,7 +51,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractKafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends AbstractFlowlet {
 
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractKafkaConsumerFlowlet.class);
 
   private final Function<KafkaConsumerInfo<OFFSET>, OFFSET> consumerToOffset =
     new Function<KafkaConsumerInfo<OFFSET>, OFFSET>() {
@@ -243,6 +247,17 @@ public abstract class AbstractKafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends
   }
 
   /**
+   * Stops a {@link Service} and waits for the completion. If there is exception during stop, it will get logged.
+   */
+  protected final void stopService(Service service) {
+    try {
+      service.stopAndWait();
+    } catch (Throwable t) {
+      LOG.error("Failed when stopping service {}", service, t);
+    }
+  }
+
+  /**
    * Creates a decoder for decoding {@link ByteBuffer} for known type. It supports
    *
    * <pre>
@@ -274,7 +289,7 @@ public abstract class AbstractKafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends
     return new Function<ByteBuffer, String>() {
       @Override
       public String apply(ByteBuffer input) {
-        return UTF_8.decode(input).toString();
+        return Charsets.UTF_8.decode(input).toString();
       }
     };
   }
