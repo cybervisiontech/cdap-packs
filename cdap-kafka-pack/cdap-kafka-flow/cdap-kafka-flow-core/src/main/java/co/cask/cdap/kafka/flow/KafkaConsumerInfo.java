@@ -19,7 +19,7 @@ package co.cask.cdap.kafka.flow;
 import org.apache.twill.kafka.client.TopicPartition;
 
 /**
- * Helper class to carry information about Kafka consumer of a particular topic partition.
+ * Helper class to carry information about a Kafka consumer of a particular topic partition.
  *
  * @param <OFFSET> Type of the offset object
  */

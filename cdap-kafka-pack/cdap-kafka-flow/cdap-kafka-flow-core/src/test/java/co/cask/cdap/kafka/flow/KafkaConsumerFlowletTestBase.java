@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Abstract base class for writing Kafka consuming flowlet test.
+ * Abstract base class for writing a Kafka consuming flowlet test.
  */
 public abstract class KafkaConsumerFlowletTestBase extends TestBase {
 

@@ -58,26 +58,25 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Abstract base class for implementing flowlet that consumes data from Kafka 0.7 cluster. One can simply extends
- * from this class and implements the {@link #configureKafka(KafkaConfigurer)} method to provide information of
- * the Kafka cluster and topics to consume from.
- * <br/><br/>
- * To process messages received from Kafka, overrides {@link #processMessage(Object) processMessage(PAYLOAD)}.
- * You can also override
- * {@link #decodePayload(ByteBuffer)} to provide custom decoding into the {@code PAYLOAD} type if it is not
- * one of the built-in support types ({@link ByteBuffer}, {@link String} and {@code byte[]}).
- * <br/>
+ * Abstract base class for implementing flowlet that consumes data from a Kafka 0.7 cluster. Simply extend
+ * from this class and implement the {@link #configureKafka(KafkaConfigurer)} method to provide information on
+ * the Kafka cluster and the topics to consume from.
+ * <p/>
+ * To process messages received from Kafka, override {@link #processMessage(Object) processMessage(PAYLOAD)}.
+ * You can also override {@link #decodePayload(ByteBuffer)} to provide custom decoding of the {@code PAYLOAD}
+ * type if it is not one of the built-in support types ({@link ByteBuffer}, {@link String}, or {@code byte[]}).
+ * <p/>
  * For advanced usage, override {@link #processMessage(KafkaMessage)} instead to get
  * full information about the message being fetched.
- * <br/><br/>
- * To enjoy automatic persisting and restoring of consumers' offsets, the {@link #getOffsetStore()} method should be
- * overridden to return a {@link KeyValueTable} as well.
- * <br/><br/>
- * The offset type for Kafka 0.7 is a map from broker id to a long offset. It's because in 0.7, there is no single
- * leader for a given topic partition, and each broker has different offset value, which is basically local file
- * offset.
+ * <p/>
+ * To enjoy automatic persisting and restoring of consumers' offsets, the {@link #getOffsetStore()} method
+ * should also be overridden to return a {@link KeyValueTable}.
+ * <p/>
+ * The offset type for Kafka 0.7 is a map from a broker id to a long offset.
+ * It's required because in Kafka 0.7 there is no single leader for a given topic partition.
+ * Each broker has a different offset value, which is basically a local file offset.
  *
- * @param <PAYLOAD> type of the message payload
+ * @param <PAYLOAD> Type of the message payload
  */
 public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
                 extends KafkaConsumerFlowlet<ByteBuffer, PAYLOAD, Map<String, Long>> {
@@ -148,7 +147,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
       return multiFetch(consumerInfo, brokers, fetchExecutor);
     }
 
-    // If there is only one broker, just fetch the message inline and returns an iterator
+    // If there is only one broker, just fetch the message inline and return an iterator
     Map<String, Long> offsets = Maps.newHashMap(consumerInfo.getReadOffset());
     KafkaBroker broker = brokers.get(0);
     SimpleConsumer consumer = getConsumer(broker, consumerInfo.getFetchSize());
@@ -158,7 +157,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Always return {@code null} as in Kafka-0.7, there is no key in the message.
+   * Always return {@code null}; in Kafka-0.7, there is no key in the message.
    */
   @Override
   protected final ByteBuffer decodeKey(ByteBuffer buffer) {
@@ -166,7 +165,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Always call {@link #processMessage(Object)} as in Kafka-0.7, there is no key in the message.
+   * Always call {@link #processMessage(Object)}; in Kafka-0.7, there is no key in the message.
    */
   @Override
   protected final void processMessage(ByteBuffer key, PAYLOAD payload) throws Exception {
@@ -174,12 +173,12 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Persists offset for each {@link TopicPartition} to a {@link KeyValueTable} provided by
-   * {@link #getOffsetStore()}. The key is simply concatenation of
-   * topic, partition and brokerId. The value is a 8-bytes encoded long of the offset. If no dataset is provided,
+   * Persists the offset for each {@link TopicPartition} to a {@link KeyValueTable} provided by
+   * {@link #getOffsetStore()}. The key is simply a concatenation of
+   * topic, partition, and brokerId. The value is an 8-byte encoded long of the offset. If no dataset is provided,
    * this method is a no-op.
    *
-   * @param offsets Map from topic partition to offsets to save.
+   * @param offsets Map (from topic partition to offsets) to be saved
    */
   @Override
   protected void saveReadOffsets(Map<TopicPartition, Map<String, Long>> offsets) {
@@ -199,11 +198,11 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Returns the beginning offset for the given topic partition. It uses the {@link KeyValueTable} returned
+   * Returns the beginning offsets for the given topic partition. It uses the {@link KeyValueTable} returned
    * by {@link #getOffsetStore()} to lookup information. If no table is provided, this method returns an empty Map.
    *
    * @param topicPartition The topic and partition that needs the start offset
-   * @return The starting offset or {@link kafka.api.OffsetRequest#EarliestTime()} if offset is unknown.
+   * @return The starting offsets
    */
   @Override
   protected Map<String, Long> getBeginOffset(TopicPartition topicPartition) {
@@ -213,7 +212,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
     }
 
     ImmutableMap.Builder<String, Long> result = ImmutableMap.builder();
-    byte[] startRow = Bytes.toBytes(topicPartition.getTopic() + ":" + topicPartition.getPartition() + ":");
+    byte[] startRow = Bytes.toBytes(getStoreKey(topicPartition) + ":");
     CloseableIterator<KeyValue<byte[], byte[]>> iterator = offsetStore.scan(startRow, Bytes.stopKeyForPrefix(startRow));
     while (iterator.hasNext()) {
       KeyValue<byte[], byte[]> keyValue = iterator.next();
@@ -229,17 +228,18 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Returns the default value of offset to start with when encounter a new broker for a given topic partition.
-   * By default it is {@code -2L}, which represents earliest offset in Kafka. Sub-class can override this to return
-   * different value (e.g. {@code -1L} means latest offset).
+   * Returns the default value of the offset to start with when encountering a new broker for a given topic partition.
+   * <p/>
+   * By default, it is {@code -2L}, which represents the earliest offset in Kafka. Sub-classes can override
+   * this to return a different value (for example {@code -1L}, which means the latest offset).
    */
   protected long getDefaultOffset(KafkaBroker broker, TopicPartition topicPartition) {
     return -2L; // Earliest
   }
 
   /**
-   * Returns a {@link SimpleConsumer} that talks to given broker. It will first lookup one from cache. If none exists
-   * in the cache, it will create one and cache it.
+   * Returns a {@link SimpleConsumer} that talks to a given broker. It will first lookup one in the cache.
+   * If none exist in the cache, it will create one and cache it.
    *
    * @param broker Broker to connect to
    * @param fetchSize maximum number of bytes for each fetch
@@ -256,10 +256,11 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Fetches messages from the given Kafka broker. If fetch fails, exception will be carried inside the fetch result.
+   * Fetches messages from the given Kafka broker. If the fetch fails,
+   * the exception will be carried inside the fetch result.
    *
-   * @param consumer The consumer to use for the fetch
-   * @param topicPartition Topic and partition to fetch from
+   * @param consumer consumer to use for the fetch
+   * @param topicPartition topic and partition to fetch from
    * @param offset message offset to start fetching
    * @param fetchSize Size in bytes for the fetch.
    */
@@ -277,10 +278,10 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   /**
    * Performs fetch from multiple brokers simultaneously.
    *
-   * @param consumerInfo information about how to consumer
+   * @param consumerInfo information on what and how to consume
    * @param brokers list of brokers to consume from
    * @param executor {@link Executor} to fetch in parallel.
-   * @return A {@link Iterator} that is a concatenation of iterators obtained from each fetch.
+   * @return concatenation of iterators obtained from each fetch
    */
   private Iterator<KafkaMessage<Map<String, Long>>> multiFetch(final KafkaConsumerInfo<Map<String, Long>> consumerInfo,
                                                                List<KafkaBroker> brokers,
@@ -311,7 +312,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
       return Iterators.concat(messageIterators.iterator());
     } catch (Exception ex) {
       // On any exception when getting the future, simply return an empty iterator
-      // This is because the task submitted to the executor should never throw exception.
+      // This is because the task submitted to the executor should never throw an exception.
       return Iterators.emptyIterator();
     }
   }
@@ -341,7 +342,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
    *
    * @param broker The broker to fetch from
    * @param topicPartition Topic and partition to fetch from
-   * @param offsets Existing offsets states. The Map may get modified after calling this method.
+   * @param offsets existing offset states; the map may be modified by the calling of this method.
    * @param consumer consumer for talking to the broker.
    * @return offset for the given {@link TopicPartition} in the given {@link KafkaBroker}.
    */
@@ -393,7 +394,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   /**
    * Handles a given {@link FetchResult}.
    *
-   * @param consumerInfo information about how to consumer
+   * @param consumerInfo information on what and how to consume
    * @param offsets Existing offsets states.
    *                The Map will get updated while iterating with the resulting {@link Iterator}.
    *                It may also get modified after calling this method
@@ -434,7 +435,7 @@ public abstract class Kafka07ConsumerFlowlet<PAYLOAD>
   }
 
   /**
-   * Helper class to carries message fetch result.
+   * Helper class to carry message fetch results.
    */
   private static final class FetchResult implements Iterable<MessageAndOffset> {
     private final KafkaBroker broker;

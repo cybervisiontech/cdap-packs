@@ -63,29 +63,26 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Abstract base class for implementing flowlet that consumes data from Kafka 0.8 cluster. One can simply extends
- * from this class and implements the {@link #configureKafka(KafkaConfigurer)} method to provide information of
- * the Kafka cluster and topics to consume from.
- * <br/><br/>
- * To process messages received from Kafka, overrides {@link #processMessage(Object) processMessage(PAYLOAD)}
+ *
+ * Abstract base class for implementing flowlet that consumes data from a Kafka 0.8 cluster. Simply extend
+ * from this class and implement the {@link #configureKafka(KafkaConfigurer)} method to provide information on
+ * the Kafka cluster and the topics to consume from.
+ * <p/>
+ * To process messages received from Kafka, override {@link #processMessage(Object) processMessage(PAYLOAD)}
  * or {@link #processMessage(Object, Object) processMessage(KEY, PAYLOAD)} if you are interested in the
- * message key as well. You can also override
- * {@link #decodeKey(ByteBuffer)} and/or {@link #decodePayload(ByteBuffer)} to provide custom
- * decoding into the {@code KEY} / {@code PAYLOAD} type if they are not
- * one of the built-in support types ({@link ByteBuffer}, {@link String} and {@code byte[]}).
- * <br/>
+ * message key as well.
+ * You can also override {@link #decodeKey(ByteBuffer)} and/or {@link #decodePayload(ByteBuffer)} to provide
+ * custom decoding of the {@code KEY} / {@code PAYLOAD} type if they are not one of the built-in
+ * support types ({@link ByteBuffer}, {@link String}, or {@code byte[]}).
+ * <p/>
  * For advanced usage, override {@link #processMessage(KafkaMessage)} instead to get
  * full information about the message being fetched.
- * <br/><br/>
- * To enjoy automatic persisting and restoring of consumers' offsets, the {@link #getOffsetStore()} method should be
- * overridden to return a {@link KeyValueTable} as well.
- * <br/><br/>
- * The offset type for Kafka 0.7 is a map from broker id to a long offset. It's because in 0.7, there is no single
- * leader for a given topic partition, and each broker has different offset value, which is basically local file
- * offset.
+ * <p/>
+ * To enjoy automatic persisting and restoring of consumers' offsets, the {@link #getOffsetStore()} method
+ * should also be overridden to return a {@link KeyValueTable}.
  *
- * @param <KEY> type of the message key
- * @param <PAYLOAD> type of the message payload
+ * @param <KEY> Type of the message key
+ * @param <PAYLOAD> Type of the message payload
  */
 public abstract class Kafka08ConsumerFlowlet<KEY, PAYLOAD> extends KafkaConsumerFlowlet<KEY, PAYLOAD, Long> {
 
@@ -187,12 +184,12 @@ public abstract class Kafka08ConsumerFlowlet<KEY, PAYLOAD> extends KafkaConsumer
 
   /**
    * Returns the beginning offset for the given topic partition. It uses the {@link KeyValueTable} returned
-   * by {@link #getOffsetStore()} to lookup information. If no table is provided, this method returns
-   * {@link kafka.api.OffsetRequest#EarliestTime()}.
+   * by {@link #getOffsetStore()} to lookup information. If no table is provided, this method returns an empty Map.
    *
    * @param topicPartition The topic and partition that needs the start offset
-   * @return The starting offset or {@link kafka.api.OffsetRequest#EarliestTime()} if offset is unknown.
+   * @return The starting offset or return {@link #getDefaultOffset(TopicPartition)} if offset is unknown
    */
+
   @Override
   protected Long getBeginOffset(TopicPartition topicPartition) {
     KeyValueTable offsetStore = getOffsetStore();
@@ -209,12 +206,12 @@ public abstract class Kafka08ConsumerFlowlet<KEY, PAYLOAD> extends KafkaConsumer
   }
 
   /**
-   * Persists offset for each {@link TopicPartition} to a {@link KeyValueTable} provided by
-   * {@link #getOffsetStore()}. The key is simply concatenation of
-   * topic and partition and the value is a 8-bytes encoded long of the offset. If no dataset is provided,
+   * Persists the offset for each {@link TopicPartition} to a {@link KeyValueTable} provided by
+   * {@link #getOffsetStore()}. The key is simply a concatenation of
+   * topic and partition. The value is an 8-byte encoded long of the offset. If no dataset is provided,
    * this method is a no-op.
    *
-   * @param offsets Map from topic partition to offset to save.
+   * @param offsets Map (from topic partition to offset) to be saved
    */
   @Override
   protected void saveReadOffsets(Map<TopicPartition, Long> offsets) {
@@ -230,8 +227,9 @@ public abstract class Kafka08ConsumerFlowlet<KEY, PAYLOAD> extends KafkaConsumer
 
   /**
    * Returns the default value of offset to start with when encounter a new broker for a given topic partition.
-   * By default it is {@link kafka.api.OffsetRequest#EarliestTime()}. Sub-class can override this to return
-   * different value (e.g. {@link kafka.api.OffsetRequest#LatestTime()} means latest offset).
+   * <p/>
+   * By default, it is {@link kafka.api.OffsetRequest#EarliestTime()}. Sub-classes can override this to return
+   * different value (for example {@link kafka.api.OffsetRequest#LatestTime()}).
    */
   protected long getDefaultOffset(TopicPartition topicPartition) {
     return kafka.api.OffsetRequest.EarliestTime();
@@ -297,7 +295,7 @@ public abstract class Kafka08ConsumerFlowlet<KEY, PAYLOAD> extends KafkaConsumer
   /**
    * Handles fetch failure.
    *
-   * @param consumerInfo information about how to consumer
+   * @param consumerInfo information on what and how to consume
    * @param consumer consumer to talk to Kafka
    * @param readOffset the beginning read offset
    * @param errorCode error code for the fetch.

@@ -316,7 +316,7 @@ final class KafkaBrokerCache extends AbstractIdleService {
   }
 
   /**
-   * Removes all Map entries that are not presented in the provided keys Set.
+   * Removes all Map entries that are not present in the provided key Set.
    */
   private <K, V> void removeDiff(Set<K> keys, Map<K, V> map) {
     for (K key : Sets.difference(map.keySet(), keys)) {
@@ -325,10 +325,10 @@ final class KafkaBrokerCache extends AbstractIdleService {
   }
 
   /**
-   * A {@link FutureCallback} for ZK operations so that if the operation failed due
-   * to {@link KeeperException.Code#NONODE} error, it will watch for existence of the given node and performs
-   * a given action when the node become available. On node removal, the node will be watched for creation again
-   * and will trigger given action again once it is created.
+   * A {@link FutureCallback} for ZK operations so that if an operation failed due
+   * to {@link KeeperException.Code#NONODE} error, it will watch for the existence of the given node and perform
+   * a given action when the node become available. Upon node removal, the node will again be watched for creation
+   * and will trigger the given action again once it is created.
    *
    * @param <V> result type of the Future it is listening on.
    */

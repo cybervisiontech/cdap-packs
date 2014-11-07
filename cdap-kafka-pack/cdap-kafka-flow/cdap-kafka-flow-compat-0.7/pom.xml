@@ -46,9 +46,11 @@
       <artifactId>kafka_2.80</artifactId>
       <version>0.7.2</version>
       <!--
-        It's optional since we provide an "embedded-kafka" classifier for artifact that have  Kafka classes in it.
-        For project that depends on that, they don't need this dependency.
-        This saves the effort of needing installing Kafka 0.7 into local maven repo.
+        It's optional since we provide an artifact jar that has the required Kafka classes in it, using the
+        "embedded-kafka" classifier. Hence, for projects that depends on the "embedded-kafka" artifact,
+        they won't need this dependency.
+        Making this optional will prevent maven to treat this as a transitive dependency, hence the user doesn't
+        need install Kafka 0.7 into local maven repo manually (as kafka-0.7.2 is not in maven central).
       -->
       <optional>true</optional>
     </dependency>

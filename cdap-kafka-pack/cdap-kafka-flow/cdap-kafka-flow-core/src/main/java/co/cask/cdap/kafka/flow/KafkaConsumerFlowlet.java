@@ -45,9 +45,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Abstract base class for implementing to consume data from Kafka cluster. This class serves as the generic base
- * to help implementing flowlet that can poll from specific Kafka version. User should be extending from one
- * of the sub-class of this class.
+ *
+ * Abstract base class for implementing consuming data from a Kafka cluster. This class serves as the generic base
+ * to help in implementing a flowlet that can poll from a specific Kafka version. Users should be extending from one
+ * of the sub-classes of this class.
  *
  * @param <KEY> Type of message key
  * @param <PAYLOAD> Type of message value
@@ -178,7 +179,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
 
 
   /**
-   * Configure Kafka consumer. This method will be called during {@link #initialize(FlowletContext)} phase,
+   * Configure Kafka consumer. This method will be called during the {@link #initialize(FlowletContext)} phase,
    * hence it has access to {@link FlowletContext} through the {@link #getContext()} method.
    *
    * @param configurer for configuring consuming from Kafka
@@ -230,7 +231,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   }
 
   /**
-   * Override this method if interested both key and payload of a message read from Kafka.
+   * Override this method if interested in both the key and payload of a message read from Kafka.
    *
    * @param key Key decoded from the message
    * @param payload Payload decoded from the message
@@ -249,7 +250,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   }
 
   /**
-   * Override this method to provide custom decoding of message key.
+   * Override this method to provide custom decoding of a message key.
    *
    * @param buffer The bytes representing the key in the Kafka message
    * @return The decoded key
@@ -259,7 +260,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   }
 
   /**
-   * Override this method to provide custom decoding of message payload.
+   * Override this method to provide custom decoding of a message payload.
    *
    * @param buffer The bytes representing the payload in the Kafka message
    * @return The decoded payload
@@ -280,7 +281,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   }
 
   /**
-   * Returns the key to be used when persisting offsets into {@link KeyValueTable}.
+   * Returns the key to be used when persisting offsets into a {@link KeyValueTable}.
    */
   protected String getStoreKey(TopicPartition topicPartition) {
     return topicPartition.getTopic() + ":" + topicPartition.getPartition();
@@ -325,7 +326,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
 
   /**
    * Creates a decoder for decoding {@link ByteBuffer} for known type. It supports
-   *
+   * <p/>
    * <pre>
    * - String (assuming UTF-8)
    * - byte[]
