@@ -12,6 +12,9 @@ programs and tools.
   The Twitter-pack library is designed to ease the CDAP apps development tasks that require integration with Twitter, 
   such as pulling tweets stream.
 
+`Kafka-Flow-pack </cdap-kafka-pack/cdap-kafka-flow/>`_: Kafka Flow Integration
+  The Kafka-Flow-pack library is designed to ease the CDAP Flow development tasks that require integration with Kafka,
+  such as consuming Kafka messages.
 
 License
 =======
