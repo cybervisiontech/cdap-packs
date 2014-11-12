@@ -24,6 +24,9 @@
   <artifactId>cdap-kafka-flow</artifactId>
   <version>0.1.0</version>
   <packaging>pom</packaging>
+  <name>CDAP Kafka Flow Pack</name>
+  <description>Data Application Platform for Hadoop: Kafka Flow Pack</description>
+  <url>https://github.com/caskdata/cdap-packs/tree/develop/cdap-kafka-pack/cdap-kafka-flow</url>
 
   <organization>
     <name>Cask Data, Inc.</name>
