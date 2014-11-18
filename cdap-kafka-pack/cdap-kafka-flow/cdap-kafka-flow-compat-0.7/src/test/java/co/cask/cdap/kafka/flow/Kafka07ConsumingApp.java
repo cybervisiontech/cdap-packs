@@ -51,7 +51,7 @@ public class Kafka07ConsumingApp extends KafkaConsumingApp {
     private OutputEmitter<String> emitter;
 
     protected void processMessage(KafkaMessage<Map<String, Long>> message) throws Exception {
-      // Should only receive message from partitions that it can process.
+      // Should only receive messages from partitions that it can process
       int partition = message.getTopicPartition().getPartition();
       if ((partition % getContext().getInstanceCount()) != getContext().getInstanceId()) {
         throw new IllegalArgumentException("Received unexpected partition " + partition);
