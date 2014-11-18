@@ -50,6 +50,16 @@ public class Kafka08ConsumingApp extends KafkaConsumingApp {
     private boolean failed;
     private OutputEmitter<String> emitter;
 
+    protected void processMessage(KafkaMessage<Long> message) throws Exception {
+      // Should only receive message from partitions that it can process.
+      int partition = message.getTopicPartition().getPartition();
+      if ((partition % getContext().getInstanceCount()) != getContext().getInstanceId()) {
+        throw new IllegalArgumentException("Received unexpected partition " + partition);
+      }
+
+      super.processMessage(message);
+    }
+
     @Override
     protected void processMessage(String value) throws Exception {
       LOG.info("Message: {}", value);
@@ -73,9 +83,23 @@ public class Kafka08ConsumingApp extends KafkaConsumingApp {
       } else if (runtimeArgs.containsKey("kafka.brokers")) {
         configurer.setBrokers(runtimeArgs.get("kafka.brokers"));
       }
+      setupTopicPartitions(configurer, runtimeArgs);
+    }
 
-      configurer.addTopicPartition(runtimeArgs.get("kafka.topic"), 0);
-      configurer.addTopicPartition(runtimeArgs.get("kafka.topic"), 1);
+    @Override
+    protected void handleInstancesChanged(KafkaConsumerConfigurer configurer) {
+      setupTopicPartitions(configurer, getContext().getRuntimeArguments());
+    }
+
+    private void setupTopicPartitions(KafkaConsumerConfigurer configurer, Map<String, String> runtimeArgs) {
+      int partitions = Integer.parseInt(runtimeArgs.get("kafka.partitions"));
+      int instanceId = getContext().getInstanceId();
+      int instances = getContext().getInstanceCount();
+      for (int i = 0; i < partitions; i++) {
+        if ((i % instances) == instanceId) {
+          configurer.addTopicPartition(runtimeArgs.get("kafka.topic"), i);
+        }
+      }
     }
 
     @Override

@@ -18,7 +18,6 @@ package co.cask.cdap.kafka.flow;
 
 import com.clearspring.analytics.util.Lists;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import kafka.javaapi.producer.Producer;
 import kafka.javaapi.producer.ProducerData;
 import kafka.producer.ProducerConfig;
@@ -71,12 +70,7 @@ public class Kafka07ConsumerFlowletTest extends KafkaConsumerFlowletTestBase {
   }
 
   @Override
-  protected Map<String, String> getRuntimeArgs(String topic, boolean preferZK) {
-    Map<String, String> args = Maps.newHashMap(super.getRuntimeArgs(topic, preferZK));
-
-    // Always use ZK in Kafka 0.7
-    args.remove("kafka.brokers");
-    args.put("kafka.zookeeper", zkServer.getConnectionStr());
-    return args;
+  protected boolean supportBrokerList() {
+    return false;
   }
 }

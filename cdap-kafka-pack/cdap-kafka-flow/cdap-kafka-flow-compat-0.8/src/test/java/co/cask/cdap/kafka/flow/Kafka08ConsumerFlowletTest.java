@@ -67,4 +67,9 @@ public class Kafka08ConsumerFlowletTest extends KafkaConsumerFlowletTestBase {
     }
     preparer.send();
   }
+
+  @Override
+  protected boolean supportBrokerList() {
+    return true;
+  }
 }
