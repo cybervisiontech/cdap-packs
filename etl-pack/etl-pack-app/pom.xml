@@ -30,7 +30,7 @@ the License.
   <packaging>jar</packaging>
 
   <properties>
-    <app.main.class>co.cask.att.dictionaryproc.DictionaryProcedureApp</app.main.class>
+    <app.main.class>co.cask.att.dictionaryproc.DictionaryOpsApp</app.main.class>
   </properties>
 
   <dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Cask, Inc.
+ * Copyright © 2014 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,22 +16,18 @@
 
 package co.cask.att.dictionaryproc;
 
-import co.cask.cdap.api.app.AbstractApplication;
-import co.cask.lib.etl.Constants;
-import co.cask.lib.etl.dictionary.DictionaryDataSet;
+import co.cask.cdap.api.service.AbstractService;
 
 /**
- * StaticFeedApp analyzes Apache access log data and aggregates
- * the number of HTTP requests each hour over the last 24 hours.
+ * Dictionary ops service.
  */
-public class DictionaryProcedureApp extends AbstractApplication {
+public class DictionaryOpsService extends AbstractService {
+    public static final String SERVICE_NAME = "DictionaryOpsService";
 
-  @Override
-  public void configure() {
-    setName("DictionaryProcedureApp");
-    setDescription("Query the dictionary dataset");
-    createDataset(Constants.DICTIONARY_DATASET, DictionaryDataSet.class);
-    addProcedure(new DictionaryOps());
-  }
-
+    @Override
+    protected void configure() {
+        setName(SERVICE_NAME);
+        setDescription("Dictionary ops service.");
+        addHandler(new DictionaryOpsServiceHandler());
+    }
 }
