@@ -124,8 +124,6 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   @Tick(delay = 100, unit = TimeUnit.MILLISECONDS)
   public void pollMessages() throws Exception {
 
-    int count = 0;
-
     // Detect and handle instance count change
     if (instances != getContext().getInstanceCount()) {
       instances = getContext().getInstanceCount();
@@ -134,6 +132,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
       updateConsumerInfos(kafkaConfigurer.getTopicPartitions(), consumerInfos);
     }
 
+    int count = 0;
     // Poll for messages from Kafka
     for (KafkaConsumerInfo<OFFSET> info : consumerInfos.values()) {
       Iterator<KafkaMessage<OFFSET>> iterator = readMessages(info);
