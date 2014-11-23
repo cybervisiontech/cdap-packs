@@ -38,7 +38,7 @@
   </modules>
 
   <properties>
-    <cdap.version>2.5.0</cdap.version>
+    <cdap.version>2.5.2</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <hive.version>0.13.0</hive.version>
     <hbase.version>0.96.0-hadoop2</hbase.version>
@@ -49,7 +49,7 @@
     <jsr305.version>2.0.1</jsr305.version>
     <netty.http.version>0.4.0</netty.http.version>
     <tephra.version>0.2.0</tephra.version>
-    <twill.version>0.4.0-incubating-SNAPSHOT</twill.version>
+    <twill.version>0.5.0-incubating-SNAPSHOT</twill.version>
 
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,38 +60,7 @@
       <id>apache.snapshots</id>
       <url>https://repository.apache.org/content/repositories/snapshots</url>
     </repository>
-    <repository>
-      <id>nexus</id>
-      <url>https://repository.continuuity.com/content/groups/public</url>
-    </repository>
-    <repository>
-      <id>continuuity-releases</id>
-      <url>https://repository.continuuity.com/content/repositories/releases/</url>
-    </repository>
-    <repository>
-      <id>continuuity-snapshots</id>
-      <url>https://repository.continuuity.com/content/repositories/snapshots/</url>
-    </repository>
-    <repository>
-      <id>continuuity-customer</id>
-      <url>https://repository.continuuity.com/content/repositories/customer/</url>
-    </repository>
-    <repository>
-      <id>continuuity-thirdparty-public</id>
-      <url>https://repository.continuuity.com/content/repositories/thirdparty/</url>
-    </repository>
   </repositories>
-
-  <distributionManagement>
-    <repository>
-      <id>continuuity-staging</id>
-      <url>https://repository.continuuity.com/service/local/staging/deploy/maven2</url>
-    </repository>
-    <snapshotRepository>
-      <id>continuuity-snapshots</id>
-      <url>https://repository.continuuity.com/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <dependencyManagement>
     <dependencies>
