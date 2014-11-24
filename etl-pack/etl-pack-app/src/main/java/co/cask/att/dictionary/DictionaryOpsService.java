@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.att.dictionaryproc;
+package co.cask.att.dictionary;
 
 import co.cask.cdap.api.service.AbstractService;
 

@@ -14,23 +14,24 @@
  * the License.
  */
 
-package co.cask.att.dictionaryproc;
+package co.cask.att.dictionary;
 
-import co.cask.cdap.api.app.AbstractApplication;
-import co.cask.lib.etl.Constants;
-import co.cask.lib.etl.dictionary.DictionaryDataSet;
+import co.cask.lib.etl.schema.FieldType;
+import com.google.gson.Gson;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * StaticFeedApp analyzes Apache access log data and aggregates
- * the number of HTTP requests each hour over the last 24 hours.
+ *
  */
-public class DictionaryOpsApp extends AbstractApplication {
+public class DictionaryOpsTest {
 
-  @Override
-  public void configure() {
-    setName("DictionaryOpsApp");
-    setDescription("Query the dictionary dataset");
-    createDataset(Constants.DICTIONARY_DATASET, DictionaryDataSet.class);
-    addService(new DictionaryOpsService());
+  private static final Gson GSON = new Gson();
+
+  @Test
+  public void testSerializeFieldType() {
+    FieldType fieldType = GSON.fromJson("INT", FieldType.class);
+    Assert.assertEquals(FieldType.INT, fieldType);
   }
+
 }
