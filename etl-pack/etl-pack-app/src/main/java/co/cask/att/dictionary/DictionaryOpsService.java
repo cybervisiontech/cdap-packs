@@ -22,12 +22,13 @@ import co.cask.cdap.api.service.AbstractService;
  * Dictionary ops service.
  */
 public class DictionaryOpsService extends AbstractService {
-    public static final String SERVICE_NAME = "DictionaryOpsService";
 
-    @Override
-    protected void configure() {
-        setName(SERVICE_NAME);
-        setDescription("Dictionary ops service.");
-        addHandler(new DictionaryOpsServiceHandler());
-    }
+  public static final String SERVICE_NAME = "DictionaryOpsService";
+
+  @Override
+  protected void configure() {
+    setName(SERVICE_NAME);
+    setDescription("Dictionary ops service.");
+    addHandler(new DictionaryOpsServiceHandler());
+  }
 }

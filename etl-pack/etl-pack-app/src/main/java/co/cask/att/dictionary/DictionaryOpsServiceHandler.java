@@ -23,19 +23,17 @@ import co.cask.cdap.api.service.http.HttpServiceResponder;
 import co.cask.lib.etl.Constants;
 import co.cask.lib.etl.dictionary.DictionaryDataSet;
 import co.cask.lib.etl.schema.FieldType;
-import com.google.gson.JsonObject;
+import com.google.common.base.Charsets;
 import org.mortbay.jetty.MimeTypes;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
-
 /**
- * Dictionary ops service handler
+ * Dictionary ops service handler.
  */
 public class DictionaryOpsServiceHandler extends AbstractHttpServiceHandler {
 
@@ -43,30 +41,29 @@ public class DictionaryOpsServiceHandler extends AbstractHttpServiceHandler {
   private DictionaryDataSet dictionary;
 
   /**
-   * Get a value from dictionary by specific key. Request should be formatted by pattern:
-   * get/{dictionary name}/{dictionary key}/{dictionary field}/{dictionary type}
+   * Retrieves a value from a dictionary for a specific key. Request should be formatted using this pattern:<br>
+   * <code>get/{dictionary-name}/{dictionary-key}/{dictionary-field}/{dictionary-key-type}</code>
    *
-   * @param request
-   * @param responder
-   * @param dictName Name of dictionary where value must be searched
-   * @param dictKey Key for search
+   * @param request   HTTP service request
+   * @param responder HTTP service responder
+   * @param dictName  Name of dictionary where value must be searched
+   * @param dictKey   Key for search
    * @param dictField Field of dictionary
-   * @param type Type of key. Supported values: STRING, INT, DOUBLE, FLOAT, LONG.
-   *             See {@link FieldType} for list of supported types.
-   * @throws IOException
+   * @param keyType   Type of key. Supported types: STRING, INT, DOUBLE, FLOAT, LONG.
+   *                  See {@link FieldType} for list of supported types.
    */
   @Path("get/{dictName}/{dictKey}/{dictField}/{keyType}")
   @GET
-  public void get(HttpServiceRequest request, HttpServiceResponder responder, @PathParam("dictName") String dictName,
-                  @PathParam("dictKey") String dictKey, @PathParam("dictField") String dictField,
-                  @PathParam("keyType") String type) throws IOException {
-    FieldType keyType = FieldType.valueOf(type.toUpperCase());
+  public void get(HttpServiceRequest request, HttpServiceResponder responder,
+                  @PathParam("dictName") String dictName, @PathParam("dictKey") String dictKey,
+                  @PathParam("dictField") String dictField, @PathParam("keyType") String keyType) {
+    FieldType type = FieldType.valueOf(keyType.toUpperCase());
 
-    byte[] val = dictionary.get(dictName, keyType.toBytes(dictKey), dictField);
-    if (val == null || val.length == 0) {
-      responder.sendJson(new JsonObject());
+    byte[] dict = dictionary.get(dictName, type.toBytes(dictKey), dictField);
+    if (dict == null || dict.length == 0) {
+      responder.sendString(HttpURLConnection.HTTP_NO_CONTENT, "No dictionary found", Charsets.UTF_8);
     } else {
-      responder.send(HttpURLConnection.HTTP_OK, ByteBuffer.wrap(val), MimeTypes.TEXT_PLAIN, null);
+      responder.send(HttpURLConnection.HTTP_OK, ByteBuffer.wrap(dict), MimeTypes.TEXT_PLAIN, null);
     }
   }
 }
