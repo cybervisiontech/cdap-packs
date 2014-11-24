@@ -19,7 +19,7 @@ package co.cask.cdap.packs.etl.transform;
 import co.cask.cdap.api.RuntimeContext;
 import co.cask.cdap.packs.etl.AbstractConfigurableProgram;
 import co.cask.cdap.packs.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

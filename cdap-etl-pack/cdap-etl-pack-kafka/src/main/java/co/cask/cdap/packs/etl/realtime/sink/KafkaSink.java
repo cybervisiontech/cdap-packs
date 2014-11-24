@@ -17,10 +17,10 @@
 package co.cask.cdap.packs.etl.realtime.sink;
 
 import co.cask.cdap.api.flow.flowlet.FlowletContext;
-import co.cask.cdap.packs.etl.etl.BaseKafkaSink;
-import co.cask.cdap.packs.etl.etl.Constants;
-import co.cask.cdap.packs.etl.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.BaseKafkaSink;
+import co.cask.cdap.packs.etl.Constants;
+import co.cask.cdap.packs.etl.Programs;
+import co.cask.cdap.packs.etl.Record;
 import com.google.common.collect.Maps;
 
 import java.util.Map;

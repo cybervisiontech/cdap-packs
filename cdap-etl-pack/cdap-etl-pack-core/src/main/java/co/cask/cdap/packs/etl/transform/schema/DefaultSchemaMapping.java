@@ -16,7 +16,7 @@
 
 package co.cask.cdap.packs.etl.transform.schema;
 
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.schema.Field;
 import co.cask.cdap.packs.etl.schema.Schema;
 

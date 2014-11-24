@@ -22,7 +22,6 @@ import co.cask.cdap.api.procedure.AbstractProcedure;
 import co.cask.cdap.api.procedure.ProcedureRequest;
 import co.cask.cdap.api.procedure.ProcedureResponder;
 import co.cask.cdap.api.procedure.ProcedureResponse;
-import co.cask.cdap.packs.etl.etl.Constants;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.FieldType;
 import com.google.gson.Gson;

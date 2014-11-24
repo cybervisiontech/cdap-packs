@@ -18,10 +18,10 @@ package co.cask.cdap.packs.etl.realtime.sink;
 
 import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.api.flow.flowlet.FlowletContext;
-import co.cask.cdap.packs.etl.etl.AbstractConfigurableProgram;
-import co.cask.cdap.packs.etl.etl.Constants;
-import co.cask.cdap.packs.etl.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.AbstractConfigurableProgram;
+import co.cask.cdap.packs.etl.Constants;
+import co.cask.cdap.packs.etl.Programs;
+import co.cask.cdap.packs.etl.Record;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import org.apache.hadoop.conf.Configuration;

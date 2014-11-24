@@ -17,7 +17,7 @@
 package co.cask.cdap.packs.etl.realtime;
 
 import co.cask.cdap.api.data.stream.Stream;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.DatasetsTrackingApplication;
 import co.cask.cdap.packs.etl.batch.ETLMetaDataSet;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;

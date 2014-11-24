@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.cdap.packs.etl.etl;
+package co.cask.cdap.packs.etl;
 
 import co.cask.cdap.api.RuntimeContext;
 import com.google.common.collect.Maps;

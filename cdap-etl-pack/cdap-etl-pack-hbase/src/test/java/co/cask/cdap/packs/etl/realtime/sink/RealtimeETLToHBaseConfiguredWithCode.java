@@ -20,10 +20,10 @@ import co.cask.cdap.packs.etl.realtime.RealtimeETL;
 import co.cask.cdap.packs.etl.realtime.source.SchemaSource;
 import co.cask.cdap.packs.etl.transform.schema.DefaultSchemaMapping;
 
-import static co.cask.cdap.packs.etl.etl.TestConstants.CF;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getInSchema;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getMapping;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getOutSchema;
+import static co.cask.cdap.packs.etl.TestConstants.CF;
+import static co.cask.cdap.packs.etl.TestConstants.getInSchema;
+import static co.cask.cdap.packs.etl.TestConstants.getMapping;
+import static co.cask.cdap.packs.etl.TestConstants.getOutSchema;
 
 public class RealtimeETLToHBaseConfiguredWithCode extends RealtimeETL {
   @Override

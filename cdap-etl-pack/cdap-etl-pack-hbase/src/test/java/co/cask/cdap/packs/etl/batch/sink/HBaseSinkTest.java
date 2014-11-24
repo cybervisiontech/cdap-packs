@@ -24,7 +24,7 @@ import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.MapReduceManager;
 import co.cask.cdap.test.TestBase;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.hbase.HBase96Test;
 import co.cask.cdap.packs.etl.hbase.HBaseTestBase;
 import com.google.common.collect.Maps;

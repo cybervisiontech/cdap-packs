@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.cdap.packs.etl.etl;
+package co.cask.cdap.packs.etl;
 
 import co.cask.cdap.packs.etl.schema.Field;
 import co.cask.cdap.packs.etl.schema.FieldType;

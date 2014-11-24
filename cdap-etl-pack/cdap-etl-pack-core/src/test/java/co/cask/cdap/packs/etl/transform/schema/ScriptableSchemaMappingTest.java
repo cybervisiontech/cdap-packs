@@ -17,7 +17,7 @@
 package co.cask.cdap.packs.etl.transform.schema;
 
 import co.cask.cdap.api.common.Bytes;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.Field;
 import co.cask.cdap.packs.etl.schema.FieldType;

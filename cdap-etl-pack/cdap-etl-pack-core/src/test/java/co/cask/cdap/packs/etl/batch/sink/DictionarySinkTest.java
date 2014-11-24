@@ -24,7 +24,7 @@ import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.MapReduceManager;
 import co.cask.cdap.test.TestBase;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;

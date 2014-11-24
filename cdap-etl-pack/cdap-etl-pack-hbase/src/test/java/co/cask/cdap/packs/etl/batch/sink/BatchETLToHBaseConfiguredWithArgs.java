@@ -21,9 +21,9 @@ import co.cask.cdap.packs.etl.batch.BatchETL;
 import co.cask.cdap.packs.etl.batch.source.TableSource;
 import co.cask.cdap.packs.etl.transform.schema.DefaultSchemaMapping;
 
-import static co.cask.cdap.packs.etl.etl.TestConstants.getInSchema;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getMapping;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getOutSchema;
+import static co.cask.cdap.packs.etl.TestConstants.getInSchema;
+import static co.cask.cdap.packs.etl.TestConstants.getMapping;
+import static co.cask.cdap.packs.etl.TestConstants.getOutSchema;
 
 public final class BatchETLToHBaseConfiguredWithArgs extends BatchETL {
   @Override

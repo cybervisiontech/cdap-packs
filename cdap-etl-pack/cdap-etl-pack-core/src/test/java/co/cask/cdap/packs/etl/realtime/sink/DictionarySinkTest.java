@@ -25,7 +25,7 @@ import co.cask.cdap.test.RuntimeMetrics;
 import co.cask.cdap.test.RuntimeStats;
 import co.cask.cdap.test.StreamWriter;
 import co.cask.cdap.test.TestBase;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;

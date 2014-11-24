@@ -17,9 +17,9 @@
 package co.cask.cdap.packs.etl.sink;
 
 import co.cask.cdap.api.mapreduce.MapReduceContext;
-import co.cask.cdap.packs.etl.etl.Constants;
-import co.cask.cdap.packs.etl.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Constants;
+import co.cask.cdap.packs.etl.Programs;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.batch.sink.MapReduceSink;
 import co.cask.cdap.packs.etl.batch.sink.SchemaSink;
 import co.cask.cdap.packs.etl.hive.HiveFieldType;

@@ -18,7 +18,7 @@ package co.cask.cdap.packs.etl.transform;
 
 import co.cask.cdap.api.RuntimeContext;
 import co.cask.cdap.packs.etl.AbstractConfigurableProgram;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 
 import javax.annotation.Nullable;
 

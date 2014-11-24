@@ -14,12 +14,12 @@
  * the License.
  */
 
-package co.cask.cdap.packs.etl.etl.kafka;
+package co.cask.cdap.packs.etl.kafka;
 
 import co.cask.cdap.api.common.Bytes;
 import co.cask.cdap.internal.io.ByteBufferInputStream;
 import co.cask.cdap.test.TestBase;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.schema.Schema;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -48,9 +48,9 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static co.cask.cdap.packs.etl.etl.TestConstants.getInSchema;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getMapping;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getOutSchema;
+import static co.cask.cdap.packs.etl.TestConstants.getInSchema;
+import static co.cask.cdap.packs.etl.TestConstants.getMapping;
+import static co.cask.cdap.packs.etl.TestConstants.getOutSchema;
 
 /**
  *

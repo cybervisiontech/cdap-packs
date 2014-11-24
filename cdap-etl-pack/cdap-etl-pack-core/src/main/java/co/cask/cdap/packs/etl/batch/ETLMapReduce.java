@@ -20,9 +20,9 @@ import co.cask.cdap.api.ProgramLifecycle;
 import co.cask.cdap.api.mapreduce.AbstractMapReduce;
 import co.cask.cdap.api.mapreduce.MapReduceContext;
 import co.cask.cdap.api.mapreduce.MapReduceSpecification;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.batch.sink.MapReduceSink;
 import co.cask.cdap.packs.etl.batch.source.MapReduceSource;
 import co.cask.cdap.packs.etl.transform.Transformation;
@@ -126,7 +126,7 @@ public class ETLMapReduce extends AbstractMapReduce {
 
   /**
    * Override it to provide different transformation logic.
-   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.etl.Constants.Batch.Transformation#ARG_TRANSFORMATION_TYPE}
+   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.Constants.Batch.Transformation#ARG_TRANSFORMATION_TYPE}
    * to get the name of
    * a class implementing transformation logic. If this method is not overridden this runtime argument is required
    * @param context instance of {@link MapReduceContext}
@@ -143,7 +143,7 @@ public class ETLMapReduce extends AbstractMapReduce {
 
   /**
    * Override it to provide different source.
-   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.etl.Constants.Batch.Source#ARG_SOURCE_TYPE} to get
+   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.Constants.Batch.Source#ARG_SOURCE_TYPE} to get
    * the name of a class implementing source. If this method is not overridden this runtime argument is required
    * @param context instance of {@link MapReduceContext}
    * @return instance of {@link MapReduceSource} to be used as source
@@ -159,7 +159,7 @@ public class ETLMapReduce extends AbstractMapReduce {
 
   /**
    * Override it to provide different sink.
-   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.etl.Constants.Batch.Sink#ARG_SINK_TYPE} to get the
+   * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.Constants.Batch.Sink#ARG_SINK_TYPE} to get the
    * name of a class implementing sink. If this method is not overridden this runtime argument is required
    * @param context instance of {@link MapReduceContext}
    * @return instance of {@link co.cask.cdap.packs.etl.batch.sink.MapReduceSink} to be used as sink

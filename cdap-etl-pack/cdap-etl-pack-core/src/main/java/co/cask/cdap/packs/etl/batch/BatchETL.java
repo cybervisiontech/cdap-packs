@@ -17,7 +17,7 @@
 package co.cask.cdap.packs.etl.batch;
 
 import co.cask.cdap.api.data.stream.Stream;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.DatasetsTrackingApplication;
 import co.cask.cdap.packs.etl.batch.sink.MapReduceSink;
 import co.cask.cdap.packs.etl.batch.source.MapReduceSource;

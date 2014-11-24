@@ -18,8 +18,8 @@ package co.cask.cdap.packs.etl.transform.schema;
 
 import co.cask.cdap.api.RuntimeContext;
 import co.cask.cdap.api.data.DataSetContext;
-import co.cask.cdap.packs.etl.etl.Constants;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Constants;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.Schema;
 import co.cask.cdap.packs.etl.transform.script.LookupFunction;

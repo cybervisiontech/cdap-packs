@@ -24,7 +24,7 @@ import co.cask.cdap.test.RuntimeMetrics;
 import co.cask.cdap.test.RuntimeStats;
 import co.cask.cdap.test.StreamWriter;
 import co.cask.cdap.test.TestBase;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.hbase.HBase96Test;
 import co.cask.cdap.packs.etl.hbase.HBaseTestBase;
 import com.google.common.collect.ImmutableMap;
@@ -41,8 +41,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static co.cask.cdap.packs.etl.etl.TestConstants.CF;
-import static co.cask.cdap.packs.etl.etl.TestConstants.getOutSchema;
+import static co.cask.cdap.packs.etl.TestConstants.CF;
+import static co.cask.cdap.packs.etl.TestConstants.getOutSchema;
 
 /**
  *

@@ -17,9 +17,9 @@
 package co.cask.cdap.packs.etl.transform.schema;
 
 import co.cask.cdap.api.RuntimeContext;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.schema.Schema;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;

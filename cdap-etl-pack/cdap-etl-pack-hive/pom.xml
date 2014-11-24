@@ -31,12 +31,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>co.cask.etl</groupId>
+      <groupId>co.cask.cdap.packs</groupId>
       <artifactId>cdap-etl-pack-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>co.cask.etl</groupId>
+      <groupId>co.cask.cdap.packs</groupId>
       <artifactId>cdap-etl-pack-api</artifactId>
       <version>${project.version}</version>
     </dependency>

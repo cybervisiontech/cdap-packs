@@ -17,7 +17,6 @@
 package co.cask.cdap.packs.etl;
 
 import co.cask.cdap.api.app.AbstractApplication;
-import co.cask.cdap.packs.etl.etl.Constants;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 
 /**

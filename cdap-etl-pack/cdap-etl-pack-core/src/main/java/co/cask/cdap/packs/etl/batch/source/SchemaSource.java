@@ -17,9 +17,9 @@
 package co.cask.cdap.packs.etl.batch.source;
 
 import co.cask.cdap.api.mapreduce.MapReduceContext;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.schema.Schema;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;

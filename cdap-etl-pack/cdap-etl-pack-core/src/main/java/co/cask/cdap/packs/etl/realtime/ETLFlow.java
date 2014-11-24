@@ -24,9 +24,9 @@ import co.cask.cdap.api.flow.flowlet.AbstractFlowlet;
 import co.cask.cdap.api.flow.flowlet.FlowletContext;
 import co.cask.cdap.api.flow.flowlet.FlowletSpecification;
 import co.cask.cdap.api.flow.flowlet.StreamEvent;
-import co.cask.cdap.packs.etl.etl.Constants;
+import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Programs;
-import co.cask.cdap.packs.etl.etl.Record;
+import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.realtime.sink.RealtimeSink;
 import co.cask.cdap.packs.etl.realtime.source.RealtimeSource;
 import co.cask.cdap.packs.etl.transform.Transformation;
@@ -146,7 +146,7 @@ public class ETLFlow implements Flow {
     /**
      * Override it to provide different transformation logic.
      * The default implementation is using program runtime argument
-     * {@link co.cask.cdap.packs.etl.etl.Constants.Realtime.Transformation#ARG_TRANSFORMATION_TYPE} to get the name of
+     * {@link co.cask.cdap.packs.etl.Constants.Realtime.Transformation#ARG_TRANSFORMATION_TYPE} to get the name of
      * a class implementing transformation logic. If this method is not overridden this runtime argument is required
      * @param context instance of {@link com.continuuity.api.flow.flowlet.FlowletContext}
      * @return instance of {@link co.cask.cdap.packs.etl.transform.Transformation} to be used for transformation
@@ -163,7 +163,7 @@ public class ETLFlow implements Flow {
 
     /**
      * Override it to provide different source.
-     * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.etl.Constants.Realtime.Source#ARG_SOURCE_TYPE}
+     * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.Constants.Realtime.Source#ARG_SOURCE_TYPE}
      * to get the name of a class implementing source. If this method is not overridden this runtime argument is required
      * @param context instance of {@link com.continuuity.api.flow.flowlet.FlowletContext}
      * @return instance of {@link co.cask.cdap.packs.etl.realtime.source.RealtimeSource} to be used as source
@@ -179,7 +179,7 @@ public class ETLFlow implements Flow {
 
     /**
      * Override it to provide different sink.
-     * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.etl.Constants.Realtime.Sink#ARG_SINK_TYPE}
+     * The default implementation is using program runtime argument {@link co.cask.cdap.packs.etl.Constants.Realtime.Sink#ARG_SINK_TYPE}
      * to get the name of
      * a class implementing sink. If this method is not overridden this runtime argument is required
      * @param context instance of {@link com.continuuity.api.flow.flowlet.FlowletContext}
