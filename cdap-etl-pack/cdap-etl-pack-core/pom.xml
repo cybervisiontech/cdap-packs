@@ -41,11 +41,6 @@
       <artifactId>cdap-etl-pack-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.continuuity.tephra</groupId>
-      <artifactId>tephra-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
 
     <!-- Hadoop dependencies -->
     <dependency>

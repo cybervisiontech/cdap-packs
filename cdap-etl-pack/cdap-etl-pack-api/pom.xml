@@ -35,11 +35,6 @@
       <artifactId>cdap-api</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>co.cask.tephra</groupId>
-      <artifactId>tephra-api</artifactId>
-      <version>0.3.0</version>
-    </dependency>
 
     <!-- Hadoop dependencies -->
     <dependency>

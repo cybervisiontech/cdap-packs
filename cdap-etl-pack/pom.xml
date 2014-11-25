@@ -48,7 +48,7 @@
     <jsr305.version>2.0.1</jsr305.version>
     <jsr305.version>2.0.1</jsr305.version>
     <netty.http.version>0.4.0</netty.http.version>
-    <tephra.version>0.2.0</tephra.version>
+    <tephra.version>0.3.2</tephra.version>
     <twill.version>0.4.0-incubating-SNAPSHOT</twill.version>
 
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
@@ -79,11 +79,6 @@
             <artifactId>netty-http</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>com.continuuity.tephra</groupId>
-        <artifactId>tephra-api</artifactId>
-        <version>${tephra.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
