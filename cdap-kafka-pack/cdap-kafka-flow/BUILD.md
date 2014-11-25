@@ -11,7 +11,7 @@ The library supports both Kafka 0.7.x and 0.8.x. Since artifacts for Kafka 0.7.x
 central repository, the project includes an artifact jar for Kafka 0.7.x.
 You'll need to install the artifact into your local maven repository before building the library:
 
-    mvn initialize -P install-kafka-0.7.2
+    mvn initialize -P install-kafka-0.7
 
 ### Build and Install Locally
 
