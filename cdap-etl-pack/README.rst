@@ -1,4 +1,4 @@
-ETL pack Library
+ETL Pack Library
 =======
 
 The *ETL-pack* library is designed to ease the development of common ETL (extract, transform, and load) solutions and provides 
