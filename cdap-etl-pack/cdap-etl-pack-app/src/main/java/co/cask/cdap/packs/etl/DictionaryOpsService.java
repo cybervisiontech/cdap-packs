@@ -17,9 +17,10 @@
 package co.cask.cdap.packs.etl;
 
 import co.cask.cdap.api.service.AbstractService;
+import co.cask.cdap.api.service.Service;
 
 /**
- * Dictionary ops service.
+ * A {@link Service} to retrieve values from a Dictionary.
  */
 public class DictionaryOpsService extends AbstractService {
 
@@ -28,7 +29,7 @@ public class DictionaryOpsService extends AbstractService {
   @Override
   protected void configure() {
     setName(SERVICE_NAME);
-    setDescription("Dictionary ops service.");
+    setDescription("Service to retrieve values from a Dictionary.");
     addHandler(new DictionaryOpsServiceHandler());
   }
 }

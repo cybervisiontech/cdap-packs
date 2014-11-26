@@ -23,16 +23,14 @@ import co.cask.cdap.api.service.http.HttpServiceResponder;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.FieldType;
 import com.google.common.base.Charsets;
-import org.mortbay.jetty.MimeTypes;
 
 import java.net.HttpURLConnection;
-import java.nio.ByteBuffer;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
 /**
- * Dictionary ops service handler.
+ * Dictionary operations service handler.
  */
 public class DictionaryOpsServiceHandler extends AbstractHttpServiceHandler {
 
@@ -58,11 +56,11 @@ public class DictionaryOpsServiceHandler extends AbstractHttpServiceHandler {
                   @PathParam("dictField") String dictField, @PathParam("keyType") String keyType) {
     FieldType type = FieldType.valueOf(keyType.toUpperCase());
 
-    byte[] dict = dictionary.get(dictName, type.toBytes(dictKey), dictField);
-    if (dict == null || dict.length == 0) {
-      responder.sendString(HttpURLConnection.HTTP_NO_CONTENT, "No dictionary found", Charsets.UTF_8);
+    byte[] value = dictionary.get(dictName, type.toBytes(dictKey), dictField);
+    if (value == null || value.length == 0) {
+      responder.sendStatus(HttpURLConnection.HTTP_NO_CONTENT);
     } else {
-      responder.send(HttpURLConnection.HTTP_OK, ByteBuffer.wrap(dict), MimeTypes.TEXT_PLAIN, null);
+      responder.sendString(HttpURLConnection.HTTP_OK, new String(value), Charsets.UTF_8);
     }
   }
 }
