@@ -43,6 +43,8 @@ public class DictionaryOpsAppTest extends TestBase {
   private static final String DICT_SHAPES = "shapes";
   private static final String DICT_SHAPES_FIELD_AREA = "area";
   private static final String DICT_SHAPES_FIELD_COLOR = "color";
+  private static final String DICT_SHAPES_FIELD_MIN = "min";
+  private static final String DICT_SHAPES_FIELD_MAX = "max";
 
   private static final Gson GSON = new Gson();
 
@@ -58,12 +60,16 @@ public class DictionaryOpsAppTest extends TestBase {
     ApplicationManager appManager = deployApplication(DictionaryOpsApp.class);
 
     DataSetManager<DictionaryDataSet> dictionary = appManager.getDataSet(Constants.DICTIONARY_DATASET);
-    dictionary.get().write(DICT_SHAPES, FieldType.STRING.toBytes("triangle"),
-                           ImmutableMap.of(DICT_SHAPES_FIELD_AREA, Bytes.toBytes("10 cm2"),
-                                           DICT_SHAPES_FIELD_COLOR, Bytes.toBytes("GREEN")));
-    dictionary.get().write(DICT_SHAPES, FieldType.STRING.toBytes("circle"),
-                           ImmutableMap.of(DICT_SHAPES_FIELD_AREA, Bytes.toBytes("15 cm2"),
-                                           DICT_SHAPES_FIELD_COLOR, Bytes.toBytes("RED")));
+    dictionary.get().write(DICT_SHAPES, Bytes.toBytes("triangle"),
+                           ImmutableMap.of(DICT_SHAPES_FIELD_AREA, FieldType.INT.toBytes(10),
+                                           DICT_SHAPES_FIELD_COLOR, FieldType.STRING.toBytes("GREEN"),
+                                           DICT_SHAPES_FIELD_MIN, FieldType.LONG.toBytes(Long.MIN_VALUE),
+                                           DICT_SHAPES_FIELD_MAX, FieldType.DOUBLE.toBytes(Double.MAX_VALUE)));
+    dictionary.get().write(DICT_SHAPES, Bytes.toBytes("circle"),
+                           ImmutableMap.of(DICT_SHAPES_FIELD_AREA, FieldType.INT.toBytes(15),
+                                           DICT_SHAPES_FIELD_COLOR, FieldType.STRING.toBytes("RED"),
+                                           DICT_SHAPES_FIELD_MIN, FieldType.FLOAT.toBytes(Float.MIN_VALUE),
+                                           DICT_SHAPES_FIELD_MAX, FieldType.LONG.toBytes(Long.MAX_VALUE)));
 
     // Makes changes of the dictionary dataset
     dictionary.flush();
@@ -74,18 +80,37 @@ public class DictionaryOpsAppTest extends TestBase {
     // Wait service startup
     serviceStatusCheck(serviceManager, true);
 
+    // Get DictionaryOpsService URL
+    URL url = serviceManager.getServiceURL();
+
     // Retrieve and verify data from the dictionary
-    String response = requestService(new URL(serviceManager.getServiceURL(), "get/shapes/triangle/area/string"));
-    Assert.assertEquals("10 cm2", response);
-
-    response = requestService(new URL(serviceManager.getServiceURL(), "get/shapes/triangle/color/string"));
+    String response = requestService(new URL(url, "get/shapes/triangle/area/int"));
+    Assert.assertEquals(10, Integer.valueOf(response).intValue());
+    response = requestService(new URL(url, "get/shapes/triangle/color/string"));
     Assert.assertEquals("GREEN", response);
+    response = requestService(new URL(url, "get/shapes/triangle/min/long"));
+    Assert.assertEquals(Long.MIN_VALUE, Long.valueOf(response).longValue());
+    response = requestService(new URL(url, "get/shapes/triangle/max/double"));
+    Assert.assertEquals(Double.MAX_VALUE, Double.valueOf(response), 10.0d);
 
-    response = requestService(new URL(serviceManager.getServiceURL(), "get/shapes/circle/area/string"));
-    Assert.assertEquals("15 cm2", response);
-
-    response = requestService(new URL(serviceManager.getServiceURL(), "get/shapes/circle/color/string"));
+    response = requestService(new URL(url, "get/shapes/circle/area/int"));
+    Assert.assertEquals(15, Integer.valueOf(response).intValue());
+    response = requestService(new URL(url, "get/shapes/circle/color/string"));
     Assert.assertEquals("RED", response);
+    response = requestService(new URL(url, "get/shapes/circle/min/float"));
+    Assert.assertEquals(Float.MIN_VALUE, Float.valueOf(response), 10.0f);
+    response = requestService(new URL(url, "get/shapes/circle/max/long"));
+    Assert.assertEquals(Long.MAX_VALUE, Long.valueOf(response).longValue());
+
+    // Test for incorrect type
+    HttpURLConnection conn = (HttpURLConnection) (new URL(url, "get/shapes/triangle/area/object")).openConnection();
+    Assert.assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, conn.getResponseCode());
+    conn.disconnect();
+
+    // Test for incorrect key
+    conn = (HttpURLConnection) (new URL(url, "get/shapes/cube/area/int")).openConnection();
+    Assert.assertEquals(HttpURLConnection.HTTP_NO_CONTENT, conn.getResponseCode());
+    conn.disconnect();
 
     appManager.stopAll();
   }
