@@ -17,6 +17,7 @@
 package co.cask.cdap.kafka.flow;
 
 import com.google.common.base.Charsets;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.apache.twill.internal.kafka.client.ZKKafkaClientService;
 import org.apache.twill.kafka.client.Compression;
 import org.apache.twill.kafka.client.KafkaClientService;
@@ -27,6 +28,8 @@ import org.junit.BeforeClass;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unit-test for consuming data in Flow from Kafka 0.8.
@@ -61,10 +64,26 @@ public class Kafka08ConsumerFlowletTest extends KafkaConsumerFlowletTestBase {
     // Publish a message to Kafka, the flow should consume it
     KafkaPublisher publisher = kafkaClient.getPublisher(KafkaPublisher.Ack.ALL_RECEIVED, Compression.NONE);
 
-    KafkaPublisher.Preparer preparer = publisher.prepare(topic);
-    for (Map.Entry<String, String> entry : messages.entrySet()) {
-      preparer.add(Charsets.UTF_8.encode(entry.getValue()), entry.getKey());
-    }
-    preparer.send();
+    // If publish failed, retry up to 20 times, with 100ms delay between each retry
+    // This is because leader election in Kafka 08 takes time when a topic is being created upon publish request.
+    int count = 0;
+    do {
+      KafkaPublisher.Preparer preparer = publisher.prepare(topic);
+      for (Map.Entry<String, String> entry : messages.entrySet()) {
+        preparer.add(Charsets.UTF_8.encode(entry.getValue()), entry.getKey());
+      }
+      try {
+        preparer.send().get();
+        break;
+      } catch (Exception e) {
+        // Backoff if send failed.
+        Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+      }
+    } while (count++ < 20);
+  }
+
+  @Override
+  protected boolean supportBrokerList() {
+    return true;
   }
 }

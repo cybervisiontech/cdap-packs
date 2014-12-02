@@ -27,6 +27,7 @@ import co.cask.cdap.test.RuntimeMetrics;
 import co.cask.cdap.test.RuntimeStats;
 import co.cask.cdap.test.TestBase;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.twill.internal.kafka.EmbeddedKafkaServer;
 import org.apache.twill.internal.utils.Networks;
@@ -52,6 +53,8 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
 
   @ClassRule
   public static final TemporaryFolder TMP_FOLDER = new TemporaryFolder();
+
+  private static final int PARTITIONS = 6;
 
   protected static InMemoryZKServer zkServer;
   protected static EmbeddedKafkaServer kafkaServer;
@@ -87,18 +90,21 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
    */
   protected abstract void sendMessage(String topic, Map<String, String> message);
 
+  protected abstract boolean supportBrokerList();
+
   /**
    * Returns a Map supplied as runtime arguments to the Flow started by this test.
    */
-  protected Map<String, String> getRuntimeArgs(String topic, boolean preferZK) {
+  private Map<String, String> getRuntimeArgs(String topic, int partitions, boolean preferZK) {
     Map<String, String> args = Maps.newHashMap();
 
     args.put("kafka.topic", topic);
-    if (preferZK) {
+    if (!supportBrokerList() || preferZK) {
       args.put("kafka.zookeeper", zkServer.getConnectionStr());
     } else {
       args.put("kafka.brokers", "localhost:" + kafkaPort);
     }
+    args.put("kafka.partitions", Integer.toString(partitions));
     return args;
   }
 
@@ -106,7 +112,7 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
   public final void testFlowlet() throws Exception {
     String topic = "testTopic";
     ApplicationManager appManager = deployApplication(getApplication());
-    FlowManager flowManager = appManager.startFlow("KafkaConsumingFlow", getRuntimeArgs(topic, false));
+    FlowManager flowManager = appManager.startFlow("KafkaConsumingFlow", getRuntimeArgs(topic, PARTITIONS, false));
 
     // Publish 5 messages to Kafka, the flow should consume them
     int msgCount = 5;
@@ -118,13 +124,11 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
 
     RuntimeMetrics sinkMetrics = RuntimeStats.getFlowletMetrics("KafkaConsumingApp", "KafkaConsumingFlow", "DataSink");
     sinkMetrics.waitForProcessed(msgCount, 10, TimeUnit.SECONDS);
-    try {
-      // Wait for 6 messages. This should get a TimeoutException, as there is only 5 messages
-      sinkMetrics.waitForProcessed(msgCount + 1, 2, TimeUnit.SECONDS);
-      Assert.fail("Expected 5 message, but got at least 6");
-    } catch (TimeoutException e) {
-      // Expected
-    }
+
+    // Sleep for a while; no more messages should be processed
+    TimeUnit.SECONDS.sleep(2);
+    Assert.assertEquals(msgCount, sinkMetrics.getProcessed());
+
     flowManager.stop();
 
     // Publish a message, a failure and another message when the flow is not running
@@ -136,25 +140,68 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
 
     // Clear stats and start the flow again (using ZK to discover broker this time)
     RuntimeStats.clearStats("KafkaConsumingApp");
-    flowManager = startFlowWithRetry(appManager, "KafkaConsumingFlow", getRuntimeArgs(topic, true), 5);
+    flowManager = startFlowWithRetry(appManager, "KafkaConsumingFlow", getRuntimeArgs(topic, PARTITIONS, true), 5);
 
-    // Wait for 2 message. This should be ok.
+    // Wait for 2 messages. This should be ok.
     sinkMetrics.waitForProcessed(2L, 10, TimeUnit.SECONDS);
 
-    try {
-      // Wait for 3 messages. This should get a TimeoutException, as the the "Failure" message in the middle is
-      // getting ignored.
-      sinkMetrics.waitForProcessed(3L, 2, TimeUnit.SECONDS);
-      Assert.fail("Expected 1 message, but got at least 2");
-    } catch (TimeoutException e) {
-      // Expected
-    }
+    // Sleep for a while; no more messages should be processed
+    TimeUnit.SECONDS.sleep(2);
+    Assert.assertEquals(2, sinkMetrics.getProcessed());
 
     flowManager.stop();
 
-    // Verify through Dataset counter table, that keeps a count for each message the sink flowlet received
+    // Verify using the Dataset counter table; it keeps a count for each message that the sink flowlet received
     KeyValueTable counter = appManager.<KeyValueTable>getDataSet("counter").get();
     CloseableIterator<KeyValue<byte[], byte[]>> scanner = counter.scan(null, null);
+    try {
+      int size = 0;
+      while (scanner.hasNext()) {
+        KeyValue<byte[], byte[]> keyValue = scanner.next();
+        Assert.assertEquals(1L, Bytes.toLong(keyValue.getValue()));
+        size++;
+      }
+      Assert.assertEquals(msgCount, size);
+    } finally {
+      scanner.close();
+    }
+  }
+
+  @Test
+  public void testChangeInstances() throws TimeoutException, InterruptedException {
+    // Start the flow with one instance source.
+    String topic = "testChangeInstances";
+    ApplicationManager appManager = deployApplication(getApplication());
+    FlowManager flowManager = appManager.startFlow("KafkaConsumingFlow", getRuntimeArgs(topic, PARTITIONS, false));
+
+    // Publish 100 messages. Expect each partition to get some of the messages.
+    int msgCount = 100;
+    for (int i = 0; i < msgCount; i++) {
+      sendMessage(topic, ImmutableMap.of(Integer.toString(i), "TestInstances " + i));
+    }
+
+    // Should received 100 messages
+    RuntimeMetrics sinkMetrics = RuntimeStats.getFlowletMetrics("KafkaConsumingApp", "KafkaConsumingFlow", "DataSink");
+    sinkMetrics.waitForProcessed(msgCount, 10, TimeUnit.SECONDS);
+
+    // Scale to 3 instances
+    flowManager.setFlowletInstances("KafkaSource", 3);
+
+    // Send another 100 messages
+    for (int i = 0; i < msgCount; i++) {
+      sendMessage(topic, ImmutableMap.of(Integer.toString(i + msgCount), "TestInstances " + (i + msgCount)));
+    }
+    msgCount *= 2;
+
+    // Should have received another 100 messages
+    sinkMetrics.waitForProcessed(msgCount, 10, TimeUnit.SECONDS);
+
+    flowManager.stop();
+
+    // Verify using the Dataset counter table; it keeps a count for each message that the sink flowlet received
+    KeyValueTable counter = appManager.<KeyValueTable>getDataSet("counter").get();
+    byte[] startRow = Bytes.toBytes("TestInstances ");
+    CloseableIterator<KeyValue<byte[], byte[]>> scanner = counter.scan(startRow, Bytes.stopKeyForPrefix(startRow));
     try {
       int size = 0;
       while (scanner.hasNext()) {
@@ -196,7 +243,7 @@ public abstract class KafkaConsumerFlowletTestBase extends TestBase {
     prop.setProperty("socket.send.buffer.bytes", "1048576");
     prop.setProperty("socket.receive.buffer.bytes", "1048576");
     prop.setProperty("socket.request.max.bytes", "104857600");
-    prop.setProperty("num.partitions", "2");
+    prop.setProperty("num.partitions", Integer.toString(PARTITIONS));
     prop.setProperty("log.retention.hours", "24");
     prop.setProperty("log.flush.interval.messages", "10000");
     prop.setProperty("log.flush.interval.ms", "1000");

@@ -71,6 +71,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   private Function<ByteBuffer, PAYLOAD> payloadDecoder;
   private KafkaConfig kafkaConfig;
   private Map<TopicPartition, KafkaConsumerInfo<OFFSET>> consumerInfos;
+  private Map<TopicPartition, KafkaConsumerInfo<OFFSET>> changedConsumerInfos;
   private int instances;
 
   /**
@@ -105,6 +106,7 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
 
     kafkaConfig = new KafkaConfig(kafkaConfigurer.getZookeeper(), kafkaConfigurer.getBrokers());
     consumerInfos = createConsumerInfos(kafkaConfigurer.getTopicPartitions());
+    changedConsumerInfos = consumerInfos;
   }
 
   /**
@@ -126,10 +128,11 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
 
     // Detect and handle instance count change
     if (instances != getContext().getInstanceCount()) {
-      instances = getContext().getInstanceCount();
       DefaultKafkaConfigurer kafkaConfigurer = new DefaultKafkaConfigurer();
       handleInstancesChanged(kafkaConfigurer);
-      updateConsumerInfos(kafkaConfigurer.getTopicPartitions(), consumerInfos);
+      changedConsumerInfos = Maps.newHashMap(consumerInfos);
+      updateConsumerInfos(kafkaConfigurer.getTopicPartitions(), changedConsumerInfos);
+      return;
     }
 
     int count = 0;
@@ -163,6 +166,11 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
 
     for (KafkaConsumerInfo<OFFSET> info : consumerInfos.values()) {
       info.commitReadOffset();
+    }
+
+    if (getContext().getInstanceCount() != instances) {
+      instances = getContext().getInstanceCount();
+      consumerInfos = ImmutableMap.copyOf(changedConsumerInfos);
     }
   }
 
@@ -294,40 +302,21 @@ public abstract class KafkaConsumerFlowlet<KEY, PAYLOAD, OFFSET> extends Abstrac
   }
 
   /**
-   * Creates a decoder for the key type. If this Flowlet is not interested in the decoding payload, {@code null}
-   * will be returned.
+   * Creates a decoder for the key type.
    *
    * @param type type to decode to
    */
   private Function<ByteBuffer, KEY> createKeyDecoder(Type type) {
-    // See if the concrete class actually interested in decoding the key,
-    // meaning the processMessage(KEY, VALUE) method is overridden
-    try {
-      getClass().getDeclaredMethod("processMessage", Object.class, Object.class);
-      return createDecoder(type, "No decoder for decoding message key");
-    } catch (NoSuchMethodException ex) {
-      // If not interested in key, no need to have decoder.
-      return null;
-    }
+    return createDecoder(type, "No decoder for decoding message key");
   }
 
   /**
-   * Creates a decoder for the payload type. If this Flowlet is not interested in the decoding payload, {@code null}
-   * will be returned.
+   * Creates a decoder for the payload type.
    *
    * @param type type to decode to
    */
   private Function<ByteBuffer, PAYLOAD> createPayloadDecoder(Type type) {
-    // See if the concrete class actually interested in decoding the value,
-    // meaning the processMessage(KafkaMessage) method is NOT overridden
-    try {
-      getClass().getDeclaredMethod("processMessage", KafkaMessage.class);
-      // If the processMessage method is implemented, the other two processMessage will not get called.
-      // Hence the payload decoder just returns null.
-      return null;
-    } catch (NoSuchMethodException e) {
-      return createDecoder(type, "No decoder for decoding message payload");
-    }
+    return createDecoder(type, "No decoder for decoding message payload");
   }
 
   /**
