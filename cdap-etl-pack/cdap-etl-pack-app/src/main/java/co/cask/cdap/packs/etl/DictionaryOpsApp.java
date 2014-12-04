@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Cask, Inc.
+ * Copyright © 2014 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,22 +16,20 @@
 
 package co.cask.cdap.packs.etl;
 
-import co.cask.cdap.packs.etl.schema.FieldType;
-import com.google.gson.Gson;
-import org.junit.Assert;
-import org.junit.Test;
+import co.cask.cdap.api.app.AbstractApplication;
+import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 
 /**
- *
+ * StaticFeedApp analyzes Apache access log data and aggregates
+ * the number of HTTP requests each hour over the last 24 hours.
  */
-public class DictionaryOpsTest {
+public class DictionaryOpsApp extends AbstractApplication {
 
-  private static final Gson GSON = new Gson();
-
-  @Test
-  public void testSerializeFieldType() {
-    FieldType fieldType = GSON.fromJson("INT", FieldType.class);
-    Assert.assertEquals(FieldType.INT, fieldType);
+  @Override
+  public void configure() {
+    setName("DictionaryOpsApp");
+    setDescription("Query the dictionary dataset");
+    createDataset(Constants.DICTIONARY_DATASET, DictionaryDataSet.class);
+    addService(new DictionaryOpsService());
   }
-
 }
