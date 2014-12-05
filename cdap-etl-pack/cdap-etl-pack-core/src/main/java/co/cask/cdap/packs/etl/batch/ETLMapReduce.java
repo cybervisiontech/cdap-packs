@@ -19,7 +19,6 @@ package co.cask.cdap.packs.etl.batch;
 import co.cask.cdap.api.ProgramLifecycle;
 import co.cask.cdap.api.mapreduce.AbstractMapReduce;
 import co.cask.cdap.api.mapreduce.MapReduceContext;
-import co.cask.cdap.api.mapreduce.MapReduceSpecification;
 import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Programs;
 import co.cask.cdap.packs.etl.Record;
@@ -28,6 +27,7 @@ import co.cask.cdap.packs.etl.batch.source.MapReduceSource;
 import co.cask.cdap.packs.etl.transform.Transformation;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.hadoop.mapreduce.Job;
@@ -61,7 +61,7 @@ public class ETLMapReduce extends AbstractMapReduce {
   }
 
   @Override
-  public MapReduceSpecification configure() {
+  public void configure() {
     Map<String, String> args = Maps.newHashMap();
     if (source != null) {
       args.put(Constants.Batch.Source.ARG_SOURCE_TYPE, source.getClass().getName());
@@ -76,14 +76,11 @@ public class ETLMapReduce extends AbstractMapReduce {
       args.putAll(sink.getConfiguration());
     }
 
-    MapReduceSpecification.Builder.AfterDescription afterDescription = MapReduceSpecification.Builder.with()
-      .setName("ETLMapReduce").setDescription("")
-      .withArguments(args)
-      .useDataSet(Constants.DICTIONARY_DATASET, Constants.ETL_META_DATASET);
-    for (String dataset : datasets) {
-      afterDescription = afterDescription.useDataSet(dataset);
-    }
-    return afterDescription.build();
+    setName("ETLMapReduce");
+    setDescription("");
+    setProperties(args);
+    useDatasets(ImmutableList.of(Constants.DICTIONARY_DATASET, Constants.ETL_META_DATASET));
+    useDatasets(datasets);
   }
 
   @Override
@@ -135,8 +132,7 @@ public class ETLMapReduce extends AbstractMapReduce {
    */
   protected Transformation getTransformation(MapReduceContext context) throws Exception {
     String transformationType = Programs.getArgOrProperty(context, Constants.Batch.Transformation.ARG_TRANSFORMATION_TYPE);
-    Preconditions.checkArgument(transformationType != null,
-                                "Missing required runtime argument " + Constants.Batch.Transformation.ARG_TRANSFORMATION_TYPE);
+    Preconditions.checkArgument(transformationType != null, "Missing required runtime argument " + Constants.Batch.Transformation.ARG_TRANSFORMATION_TYPE);
 
     return (Transformation) Class.forName(transformationType).newInstance();
   }
@@ -151,8 +147,7 @@ public class ETLMapReduce extends AbstractMapReduce {
    */
   protected MapReduceSource getSource(MapReduceContext context) throws Exception {
     String sourceType = Programs.getArgOrProperty(context, Constants.Batch.Source.ARG_SOURCE_TYPE);
-    Preconditions.checkArgument(sourceType != null,
-                                "Missing required runtime argument " + Constants.Batch.Source.ARG_SOURCE_TYPE);
+    Preconditions.checkArgument(sourceType != null, "Missing required runtime argument " + Constants.Batch.Source.ARG_SOURCE_TYPE);
 
     return (MapReduceSource) Class.forName(sourceType).newInstance();
   }

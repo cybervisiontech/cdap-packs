@@ -17,10 +17,10 @@
 package co.cask.cdap.packs.etl.kafka;
 
 import co.cask.cdap.api.common.Bytes;
-import co.cask.cdap.internal.io.ByteBufferInputStream;
-import co.cask.cdap.test.TestBase;
 import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.schema.Schema;
+import co.cask.cdap.test.TestBase;
+import co.cask.common.io.ByteBufferInputStream;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;

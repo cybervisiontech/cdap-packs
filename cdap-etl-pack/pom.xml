@@ -38,7 +38,7 @@
   </modules>
 
   <properties>
-    <cdap.version>2.5.2</cdap.version>
+    <cdap.version>2.6.0-SNAPSHOT</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <hive.version>0.13.0</hive.version>
     <hbase.version>0.96.0-hadoop2</hbase.version>
@@ -59,6 +59,10 @@
     <repository>
       <id>apache.snapshots</id>
       <url>https://repository.apache.org/content/repositories/snapshots</url>
+    </repository>
+    <repository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
   </repositories>
 

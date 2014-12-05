@@ -60,7 +60,7 @@ public class TableSource extends SchemaSource<byte[], Row> {
     super.prepareJob(context);
     String tableName = Programs.getArgOrProperty(context, Constants.Batch.Source.Table.ARG_INPUT_TABLE);
     Preconditions.checkArgument(tableName != null, "Missing required argument " + Constants.Batch.Source.Table.ARG_INPUT_TABLE);
-    Table table = context.getDataSet(tableName);
+    Table table = context.getDataset(tableName);
     context.setInput(tableName, table.getSplits());
   }
 
