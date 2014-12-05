@@ -22,33 +22,32 @@ import co.cask.cdap.packs.etl.schema.Field;
 import co.cask.cdap.packs.etl.schema.FieldType;
 import co.cask.cdap.packs.etl.schema.Schema;
 import com.google.common.base.Preconditions;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import javax.script.SimpleScriptContext;
 
 /**
  * Transforms input records to output records based on a mapping.
  * The mapping is treated as "outputFieldName" -> "outputFieldExpression".
  */
-// TODO: move to api module
 public class ScriptBasedTransformer {
 
   private static final Logger LOG = LoggerFactory.getLogger(ScriptBasedTransformer.class);
 
-  private ScriptEngineManager factory = new ScriptEngineManager();
-  private ScriptEngine engine = factory.getEngineByName("JavaScript");
-
   public Record transform(Record input, Schema inputSchema, Schema outputSchema,
-                          Map<String, String> mapping, ContextVariable... contextVariables) throws ScriptException {
-    ScriptContext scriptContext = setupContext(input, inputSchema, contextVariables);
-    return processOutput(outputSchema, mapping, scriptContext);
+                          Map<String, String> mapping, ContextVariable... contextVariables) {
+    Context context = Context.enter();
+    try {
+      Scriptable scope = context.initStandardObjects();
+      setupScope(scope, input, inputSchema, contextVariables);
+      return processOutput(context, scope, outputSchema, mapping);
+    } finally {
+      Context.exit();
+    }
   }
 
   public Record generateDefaultRecord(Schema schema) {
@@ -62,16 +61,14 @@ public class ScriptBasedTransformer {
     return record.build();
   }
 
-  private ScriptContext setupContext(Record input, Schema inputSchema,
-                                     ContextVariable...variables) {
-
-    SimpleScriptContext scriptContext = new SimpleScriptContext();
+  private void setupScope(Scriptable scope, Record input, Schema inputSchema,
+                          ContextVariable...variables) {
 
     // set context variables
     for (ContextVariable variable : variables) {
-      Preconditions.checkState(scriptContext.getAttribute(variable.getName(), ScriptContext.ENGINE_SCOPE) == null,
+      Preconditions.checkState(scope.get(variable.getName(), scope) == null,
                                "Context variable " + variable.getName() + " cannot be redefined");
-      scriptContext.setAttribute(variable.getName(), variable.getValue(), ScriptContext.ENGINE_SCOPE);
+      scope.put(variable.getName(), scope, variable.getValue());
     }
 
     // set input variables
@@ -82,14 +79,12 @@ public class ScriptBasedTransformer {
         throw new IllegalArgumentException("No value found in input for column " + inputColumn);
       }
       Object inputValue = type.fromBytes(valueBytes);
-      scriptContext.setAttribute(inputColumn.getName(), inputValue, ScriptContext.ENGINE_SCOPE);
+      scope.put(inputColumn.getName(), scope, inputValue);
+      LOG.info("Set {} to {}", inputColumn.getName(), inputValue);
     }
-
-    return scriptContext;
   }
 
-  private Record processOutput(Schema rowSchema, Map<String, String> mapping,
-                                     ScriptContext scriptContext) throws ScriptException {
+  private Record processOutput(Context context, Scriptable scope, Schema rowSchema, Map<String, String> mapping) {
 
     Record.Builder record = new Record.Builder();
 
@@ -103,7 +98,7 @@ public class ScriptBasedTransformer {
         continue;
       }
 
-      Object processedValue = engine.eval(expression, scriptContext);
+      Object processedValue = context.evaluateString(scope, expression, "", 0, null);
       if (processedValue == null) {
         processedValue = type.getDefaultValue();
       }

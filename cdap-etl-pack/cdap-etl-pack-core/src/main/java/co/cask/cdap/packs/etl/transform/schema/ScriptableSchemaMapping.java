@@ -24,20 +24,14 @@ import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.Schema;
 import co.cask.cdap.packs.etl.transform.script.LookupFunction;
 import co.cask.cdap.packs.etl.transform.script.ScriptBasedTransformer;
-import com.google.gson.Gson;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
-import javax.script.ScriptException;
 
 /**
  * Transformation that supports javascript functions and dictionary lookup.
  */
 public class ScriptableSchemaMapping extends SchemaMapping {
-  private static final Logger LOG = LoggerFactory.getLogger(ScriptableSchemaMapping.class);
-  private static final Gson GSON = new Gson();
 
   private DictionaryDataSet dictionaryDataSet;
 
@@ -62,12 +56,7 @@ public class ScriptableSchemaMapping extends SchemaMapping {
     LookupFunction dictionaryLookup = new LookupFunction(dictionaryDataSet, input);
 
     ScriptBasedTransformer dataProcessor = new ScriptBasedTransformer();
-    try {
-      return dataProcessor.transform(input, inputSchema, outputSchema, mapping,
-                                     dictionaryLookup.getContextVariables());
-    } catch (ScriptException e) {
-      LOG.error("Error parsing expression in mapping: {}", GSON.toJson(mapping), e);
-      return null;
-    }
+    return dataProcessor.transform(input, inputSchema, outputSchema, mapping,
+                                   dictionaryLookup.getContextVariables());
   }
 }

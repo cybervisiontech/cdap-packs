@@ -33,6 +33,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mozilla.javascript.EcmaError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +157,7 @@ public class ScriptableSchemaMappingTest {
     Field removedField = testCase.getInputSchemaFields().remove(0);
     Assert.assertEquals(prevSize - 1, testCase.getInputSchemaFields().size());
 
-    expectedEx.expect(ScriptException.class);
+    expectedEx.expect(EcmaError.class);
     expectedEx.expectMessage("\"" + removedField.getName() + "\" is not defined.");
     doTestTransform(testCase);
   }
@@ -222,8 +223,11 @@ public class ScriptableSchemaMappingTest {
     return map;
   }
 
-  private static final TransformTestCase getDefaultTransformTestCase() {
-    List<Field> inputSchema = Lists.newArrayList(ImmutableList.<Field>builder().add(new Field("someInt", FieldType.INT)).add(new Field("someString", FieldType.STRING)).add(new Field("someLong", FieldType.LONG)).build());
+  private static TransformTestCase getDefaultTransformTestCase() {
+    List<Field> inputSchema = Lists.newArrayList(ImmutableList.<Field>builder()
+                                                   .add(new Field("someInt", FieldType.INT))
+                                                   .add(new Field("someString", FieldType.STRING))
+                                                   .add(new Field("someLong", FieldType.LONG)).build());
 
     List<Field> outputSchema = Lists.newArrayList(
       ImmutableList.<Field>builder()
