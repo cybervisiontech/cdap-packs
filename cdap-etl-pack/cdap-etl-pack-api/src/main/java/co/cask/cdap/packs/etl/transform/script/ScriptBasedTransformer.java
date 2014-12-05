@@ -24,6 +24,7 @@ import co.cask.cdap.packs.etl.schema.Schema;
 import com.google.common.base.Preconditions;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.UniqueTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +67,11 @@ public class ScriptBasedTransformer {
 
     // set context variables
     for (ContextVariable variable : variables) {
-      Preconditions.checkState(scope.get(variable.getName(), scope) == null,
-                               "Context variable " + variable.getName() + " cannot be redefined");
+      Object existingValue = scope.get(variable.getName(), scope);
+      if (existingValue != null && existingValue instanceof UniqueTag) {
+        Preconditions.checkState(existingValue.equals(UniqueTag.NOT_FOUND),
+                                 "Context variable " + variable.getName() + " cannot be redefined");
+      }
       scope.put(variable.getName(), scope, variable.getValue());
     }
 
