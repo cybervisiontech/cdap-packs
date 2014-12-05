@@ -65,7 +65,7 @@ public class DictionarySink
     Programs.checkArgOrPropertyIsSet(context, Constants.Realtime.Sink.Dictionary.ARG_DICTIONARY_KEY_FIELD);
     dictionaryName = Programs.getArgOrProperty(context, Constants.Realtime.Sink.Dictionary.ARG_DICTIONARY_NAME);
     keyField = Programs.getArgOrProperty(context, Constants.Realtime.Sink.Dictionary.ARG_DICTIONARY_KEY_FIELD);
-    dictionary = context.getDataSet(Constants.DICTIONARY_DATASET);
+    dictionary = context.getDataset(Constants.DICTIONARY_DATASET);
   }
 
   @Override

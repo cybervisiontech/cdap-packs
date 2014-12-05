@@ -103,7 +103,7 @@ public class StreamSource extends SchemaSource<LongWritable, Text> {
     recordSeparator = Programs.getArgOrProperty(context, Constants.Batch.Source.Stream.ARG_RECORD_SEPARATOR, DEFAULT_RECORD_SEPARATOR);
     taskId = Programs.getArgOrProperty(context, Constants.ARG_TASK_ID);
 
-    ETLMetaDataSet mds = context.getDataSet(Constants.ETL_META_DATASET);
+    ETLMetaDataSet mds = context.getDataset(Constants.ETL_META_DATASET);
     Progress progress = mds.get(taskId, Progress.class);
     Progress newProgress = advanceProgress(progress, context.getLogicalStartTime());
     mds.set(taskId, newProgress);
@@ -120,7 +120,7 @@ public class StreamSource extends SchemaSource<LongWritable, Text> {
   public void onFinish(boolean succeeded, MapReduceContext context) throws Exception {
     if (succeeded) {
       String id = Programs.getArgOrProperty(context, Constants.ARG_TASK_ID);
-      ETLMetaDataSet mds = context.getDataSet(Constants.ETL_META_DATASET);
+      ETLMetaDataSet mds = context.getDataset(Constants.ETL_META_DATASET);
       Progress progress = mds.get(id, Progress.class);
       // NOTE: we know progress is not null
       // setting lastProcessed to lastAttempted since attempt was successful

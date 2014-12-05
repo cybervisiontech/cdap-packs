@@ -17,7 +17,7 @@
 package co.cask.cdap.packs.etl.transform.schema;
 
 import co.cask.cdap.api.RuntimeContext;
-import co.cask.cdap.api.data.DataSetContext;
+import co.cask.cdap.api.data.DatasetContext;
 import co.cask.cdap.packs.etl.Constants;
 import co.cask.cdap.packs.etl.Record;
 import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
@@ -52,7 +52,7 @@ public class ScriptableSchemaMapping extends SchemaMapping {
   public void initialize(RuntimeContext context) throws Exception {
     super.initialize(context);
     // todo: this is ugly: we know that it is either MapReduce or Flowlet context, but better not to cast like that...
-    dictionaryDataSet = ((DataSetContext) context).getDataSet(Constants.DICTIONARY_DATASET);
+    dictionaryDataSet = ((DatasetContext) context).getDataset(Constants.DICTIONARY_DATASET);
   }
 
   @Override

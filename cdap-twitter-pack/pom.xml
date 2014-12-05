@@ -29,13 +29,17 @@
   <url>https://github.com/caskdata/cdap</url>
 
   <properties>
-    <cdap.version>2.5.1</cdap.version>
+    <cdap.version>2.6.0-SNAPSHOT</cdap.version>
     <twitter4j.version>[4.0,)</twitter4j.version>
     <slf4j.version>1.7.5</slf4j.version>
     <junit.version>4.11</junit.version>
   </properties>
 
   <repositories>
+    <repository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </repository>
     <repository>
       <id>apache.snapshots</id>
       <url>https://repository.apache.org/content/repositories/snapshots</url>
