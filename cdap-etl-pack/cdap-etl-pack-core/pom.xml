@@ -42,6 +42,11 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
+    </dependency>
+
     <!-- Hadoop dependencies -->
     <dependency>
       <groupId>org.apache.hadoop</groupId>

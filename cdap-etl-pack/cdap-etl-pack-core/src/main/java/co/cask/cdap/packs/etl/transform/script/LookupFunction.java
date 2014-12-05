@@ -21,8 +21,8 @@ import co.cask.cdap.packs.etl.dictionary.DictionaryDataSet;
 import co.cask.cdap.packs.etl.schema.FieldType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import sun.org.mozilla.javascript.internal.FunctionObject;
-import sun.org.mozilla.javascript.internal.ScriptableObject;
+import org.mozilla.javascript.FunctionObject;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  * Used to provide functions in the {@link javax.script.ScriptContext}
@@ -72,8 +72,8 @@ public class LookupFunction extends ScriptableObject {
     try {
       return new ContextVariable[] {
         new ContextVariable("lookup", new FunctionObject(
-          "lookup", getClass().getDeclaredMethod(
-          "lookup", String.class, String.class, String.class, String.class), this))
+          "lookup",
+          getClass().getDeclaredMethod("lookup", String.class, String.class, String.class, String.class), this))
       };
     } catch (NoSuchMethodException e) {
       Throwables.propagate(e);
